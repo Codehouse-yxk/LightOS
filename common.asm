@@ -1,3 +1,9 @@
+
+;Global Variable
+BaseOfBoot    equ    0x7C00
+BaseOfLoader  equ    0x9000
+BaseOfKernel  equ    0xB000
+
 ; PIC-8259A Ports 
 MASTER_ICW1_PORT                        equ     0x20
 MASTER_ICW2_PORT                        equ     0x21

@@ -1,6 +1,8 @@
 
 .PHONY : all clean rebuild
 
+KERNEL_SRC := kmain.c screen.c
+
 KERNEL_ADDR := B000
 IMG := LightOS
 IMG_PATH := /mnt/hgfs
@@ -17,8 +19,6 @@ BOOT_SRC   := boot.asm
 LOADER_SRC := loader.asm
 COMMON_SRC := common.asm
 
-KERNEL_SRC := kmain.c
-
 BOOT_OUT   := boot
 LOADER_OUT := loader
 KERNEL_OUT := kernel
@@ -27,7 +27,8 @@ KENTRY_OUT := $(DIR_OBJS)/kentry.o
 EXE := kernel.out
 EXE := $(addprefix $(DIR_EXES)/, $(EXE))
 
-SRCS := $(wildcard *.c)
+SRCS := $(KERNEL_SRC)
+# SRCS := $(wildcard *.c)
 OBJS := $(SRCS:.c=.o)
 OBJS := $(addprefix $(DIR_OBJS)/, $(OBJS))
 DEPS := $(SRCS:.c=.dep)
@@ -61,7 +62,8 @@ $(KENTRY_OUT) : $(KENTRY_SRC) $(COMMON_SRC)
 	nasm -f elf $< -o $@
     
 $(KERNEL_OUT) : $(EXE)
-	./elf2kobj -c$(KERNEL_ADDR) $< $@
+	chmod 777 elf2kobj
+	sudo ./elf2kobj -c$(KERNEL_ADDR) $< $@
 	sudo mount -o loop $(IMG) $(IMG_PATH)
 	sudo cp $@ $(IMG_PATH)/$@
 	sudo umount $(IMG_PATH)
@@ -70,7 +72,7 @@ $(EXE) : $(KENTRY_OUT) $(OBJS)
 	ld -s $^ -o $@
 	
 $(DIR_OBJS)/%.o : %.c
-	gcc -fno-builtin -fno-stack-protector -o $@ -c $(filter %.c, $^)
+	gcc -fno-builtin -fno-stack-protector -c $(filter %.c, $^) -o $@
 
 $(DIRS) :
 	mkdir $@
