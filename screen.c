@@ -1,9 +1,9 @@
 
 #include "screen.h"
 
-static int gPosW = 0;
-static int gPosH = 0;
-static char gColor = SCREEN_WHITE;
+static byte gPosW = 0;
+static byte gPosH = 0;
+static byte gColor = SCREEN_WHITE;
 
 void ClearScreen()
 {
@@ -20,16 +20,16 @@ void ClearScreen()
 	SetPrintPos(0, 0);
 }
 
-int SetPrintPos(short w, short h)
+int SetPrintPos(byte w, byte h)
 {
 	int ret = 0;
-	if (ret = ((w >= 0) && (w <= SCREEN_WIDTH) && ((h >= 0) && (h <= SCREEN_HEIGHT))))
+	if (ret = ((w < SCREEN_WIDTH) && (h < SCREEN_HEIGHT)))
 	{
 		gPosW = w;
 		gPosH = h;
 
 		/* 重定位光标 */
-		unsigned short bx = SCREEN_WIDTH * h + w;
+		ushort bx = SCREEN_WIDTH * h + w;
 		asm volatile(
 			//设置光标位置高8位
 			"movw %0, %%bx\n"
@@ -74,12 +74,12 @@ int PrintChar(const char c)
 	}
 	else
 	{
-		int pw = gPosW;
-		int ph = gPosH;
-		if ((pw >= 0) && (pw <= SCREEN_WIDTH) && ((ph >= 0) && (ph <= SCREEN_HEIGHT)))
+		byte pw = gPosW;
+		byte ph = gPosH;
+		if ((pw < SCREEN_WIDTH) && (ph < SCREEN_HEIGHT))
 		{
 			int edi = (SCREEN_WIDTH * ph + pw) * 2;
-			char ah = gColor;
+			byte ah = gColor;
 			char al = c;
 			asm volatile(
 				"movl %0, %%edi\n"
@@ -148,7 +148,7 @@ int PrintIntDec(int n)
 	return ret;
 }
 
-int PrintIntHex(unsigned int n)
+int PrintIntHex(uint n)
 {
 	char hex[11] = {'0', 'x'}; // 11 = '0' + 'x' + '8个F' + '结束 0'
 

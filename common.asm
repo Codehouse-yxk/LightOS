@@ -1,8 +1,17 @@
 
 ;Global Variable
-BaseOfBoot    equ    0x7C00
-BaseOfLoader  equ    0x9000
-BaseOfKernel  equ    0xB000
+BaseOfBoot    equ    0x7C00     ;启动程序加载地址
+BaseOfLoader  equ    0x9000     ;Bootloader加载地址
+BaseOfKernel  equ    0xB000     ;内核加载地址
+
+BaseOfSharedMemory  equ 0xA000  ;共享内存起始地址
+
+; Shared value Address
+GdtEntry        equ     BaseOfSharedMemory + 0      ;全局段描述符表起始地址
+GdtSize         equ     BaseOfSharedMemory + 4      ;全局段描述符表大小
+IdtEntry        equ     BaseOfSharedMemory + 8      ;中断描述符表起始地址
+IdtSize         equ     BaseOfSharedMemory + 12     ;中断描述符表大小
+RunTaskEntry    equ     BaseOfSharedMemory + 16     ;函数指针
 
 ; PIC-8259A Ports 
 MASTER_ICW1_PORT                        equ     0x20
@@ -32,15 +41,15 @@ SLAVE_IRR_PORT                          equ     0xA0
 SLAVE_ISR_PORT                          equ     0xA0
 
 ; Segment Attribute
-DA_32       equ    0x4000
-DA_LIMIT_4K    EQU       0x8000
-DA_DR       equ    0x90
-DA_DRW      equ    0x92
-DA_DRWA     equ    0x93
-DA_C        equ    0x98
-DA_CR       equ    0x9A
-DA_CCO      equ    0x9C
-DA_CCOR     equ    0x9E
+DA_32       equ    0x4000           ;保护模式下32位段
+DA_LIMIT_4K equ    0x8000           ;
+DA_DR       equ    0x90             ;只读数据段
+DA_DRW      equ    0x92             ;可读写数据段
+DA_DRWA     equ    0x93             ;已访问可读写数据段
+DA_C        equ    0x98             ;只执行代码段
+DA_CR       equ    0x9A             ;可执行可读代码段
+DA_CCO      equ    0x9C             ;只执行一致性代码段
+DA_CCOR     equ    0x9E             ;可执行可读一致性代码段
 
 ; Segment Privilege
 DA_DPL0        equ      0x00    ; DPL = 0

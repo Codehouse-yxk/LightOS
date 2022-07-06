@@ -1,7 +1,7 @@
 
 .PHONY : all clean rebuild
 
-KERNEL_SRC := kmain.c screen.c
+KERNEL_SRC := kmain.c screen.c kernel.c global.c
 
 KERNEL_ADDR := B000
 IMG := LightOS
