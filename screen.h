@@ -2,6 +2,8 @@
 #ifndef SCREEN_H
 #define SCREEN_H
 
+#include "type.h"
+
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
@@ -15,11 +17,11 @@ typedef enum {
 } PrintColor;
 
 void ClearScreen();
-int SetPrintPos(short w, short h);
+int SetPrintPos(byte w, byte h);
 void SetPrintColor(PrintColor c);
 int PrintChar(const char c);
 int PrintString(const char *s);
 int PrintIntDec(int n);
-int PrintIntHex(unsigned int n);
+int PrintIntHex(uint n);
 
 #endif // SCREEN_H

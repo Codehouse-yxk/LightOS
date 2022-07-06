@@ -65,6 +65,8 @@ BLMain:
 	cmp dx, 0
 	jz output
 
+    call StoreGlobal
+
     ;①加载全局段描述符表
     lgdt [GdtPtr]
     
@@ -117,6 +119,13 @@ InitDescItem:
     
     pop eax
     
+    ret
+
+;保存gdt信息到共享内存中
+StoreGlobal:
+    mov eax, dword [GdtPtr + 2]
+    mov dword [GdtEntry], eax
+    mov dword [GdtSize], GdtLen / 8
     ret
     
     
