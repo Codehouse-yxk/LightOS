@@ -25,6 +25,7 @@ typedef struct {
     uint fs;
     uint es;
     uint ds;
+
     uint edi;
     uint esi;
     uint ebp;
@@ -33,6 +34,7 @@ typedef struct {
     uint edx;
     uint ecx;
     uint eax;
+
     uint raddr;
     uint eip;
     uint cs;
@@ -45,7 +47,7 @@ typedef struct
 {
     uint   previous;
     uint   esp0;
-    uint   ss0;
+    uint   ss0;         //0特权级栈，低特权级升高特权级时使用。
     uint   unused[22];
     ushort reserved;
     ushort iomb;

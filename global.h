@@ -3,8 +3,11 @@
 #define GLOBAL_H
 
 #include "kernel.h"
+#include "const.h"
 
-extern GdtInfo gGdtInfo = {0};
+extern GdtInfo gGdtInfo;
+
+extern void (* const RunTask)(Task* pt);
 
 
 #endif  //GLOBAL_H
