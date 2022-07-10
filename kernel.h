@@ -4,7 +4,7 @@
 #include "type.h"
 #include "const.h"
 
-/* 描述符内存结构 */
+/* GDT描述符内存结构 */
 typedef struct {
     ushort limit1;          //段界限1
     ushort base1;           //段基址1
@@ -19,6 +19,21 @@ typedef struct {
     Descriptor* const entry;
     const int size;
 } GdtInfo;
+
+/* 门描述符结构 */
+typedef struct {
+    ushort offset1;
+    ushort selector;
+    byte   dcount;
+    byte   attr;
+    ushort offset2;
+} Gate;
+
+/* 中断描述符表 */
+typedef struct {
+    Gate* const entry;
+    const int    size;
+} IdtInfo;
 
 typedef struct {
     uint gs;
@@ -74,6 +89,12 @@ int SetDescValue(Descriptor* pDesc, uint base, uint limit, ushort attr);
 
 /* 获取段描述符的值（基址、界限、属性） */
 int GetDescValue(Descriptor* pDesc, uint* pBase, uint* pLimit, ushort* pAttr);
+
+/* 设置中断回调函数 */
+int SetIntHandler(Gate* pGate, uint ifunc);
+
+/* 获取中断回调函数 */
+int GetIntHandler(Gate* pGate, uint* pIfunc);
 
 
 #endif  //KERNEL_H
