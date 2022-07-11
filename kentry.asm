@@ -17,15 +17,17 @@ extern EnableTimer
 extern SendEOI
 
 ;进入中断（保存上下文）
+;因为将任务RegValue成员当作内核栈使用，所以才有以下处理方式：
+;将当前实时上下文保存到RegValue结构中（任务上下文寄存器实时数据-->RegValue）
 %macro BeginISR 0
     sub esp, 4  ;跳过p.rv.raddr
 
     pushad      ;push eax, ecx, edx, ebx, esp, ebp, esi, edi
 
-    push ds		;p->rv.ds --> ds
-    push es		;p->rv.es --> es
-    push fs		;p->rv.fs --> fs
-    push gs		;p->rv.gs --> gs
+    push ds		;p(实时)->rv.ds --> p(任务)->rv.ds
+    push es		;p(实时)->rv.es --> p(任务)->rv.es
+    push fs		;p(实时)->rv.fs --> p(任务)->rv.fs
+    push gs		;p(实时)->rv.gs --> p(任务)->rv.gs
 
     ;中断后，ds es使用的段选择子和ss一致，均为 GDT_DATA32_FLAT_SELECTOR
     mov dx, ss
@@ -36,13 +38,14 @@ extern SendEOI
 %endmacro
 
 ;退出中断（恢复上下文）
+;从RegValue结构中恢复上下文（RegValue（进入中断时保存的上下文）-->任务的RegValue【gCTaskAddr】）
 %macro EndISR 0
     mov esp, [gCTaskAddr]
 
-    pop gs      ;gs --> p->rv.gs
-    pop fs      ;fs --> p->rv.fs
-    pop es      ;es --> p->rv.es
-    pop ds      ;ds --> p->rv.ds
+	pop gs      ;p(任务)->rv.gs --> p(实时)->rv.gs
+    pop fs      ;p(任务)->rv.fs --> p(实时)->rv.fs
+    pop es      ;p(任务)->rv.es --> p(实时)->rv.es
+    pop ds      ;p(任务)->rv.ds --> p(实时)->rv.ds
 
     popad       ;pop edi, esi, ebp, esp, ebx, edx, ecx, eax
 
