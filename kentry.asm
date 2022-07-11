@@ -2,15 +2,55 @@
 %include "common.asm"
 
 global _start
+global TimeHandleEntry
 
+extern gGdtInfo
+extern gIdtInfo
+extern gCTaskAddr
+
+extern TimerHandler
 extern KMain
 extern ClearScreen
 extern RunTask
-extern gGdtInfo
-extern gIdtInfo
 extern InitInterrupt
 extern EnableTimer
 extern SendEOI
+
+;进入中断（保存上下文）
+%macro BeginISR 0
+    sub esp, 4  ;跳过p.rv.raddr
+
+    pushad      ;push eax, ecx, edx, ebx, esp, ebp, esi, edi
+
+    push ds		;p->rv.ds --> ds
+    push es		;p->rv.es --> es
+    push fs		;p->rv.fs --> fs
+    push gs		;p->rv.gs --> gs
+
+    ;中断后，ds es使用的段选择子和ss一致，均为 GDT_DATA32_FLAT_SELECTOR
+    mov dx, ss
+    mov ds, dx
+    mov es, dx
+
+    mov esp, BaseOfLoader   ;esp指向内核栈
+%endmacro
+
+;退出中断（恢复上下文）
+%macro EndISR 0
+    mov esp, [gCTaskAddr]
+
+    pop gs      ;gs --> p->rv.gs
+    pop fs      ;fs --> p->rv.fs
+    pop es      ;es --> p->rv.es
+    pop ds      ;ds --> p->rv.ds
+
+    popad       ;pop edi, esi, ebp, esp, ebx, edx, ecx, eax
+
+    add esp, 4  ;mov esp, &(p->rv.eip)
+
+    iret        ;pop eip, cs, eflags, esp, ss
+%endmacro
+
 
 [section .text]
 [bits 32]
@@ -55,3 +95,12 @@ InitGlobal:
     leave
 
     ret
+
+TimeHandleEntry:
+    BeginISR
+    call TimerHandler
+    EndISR
+
+    
+
+    

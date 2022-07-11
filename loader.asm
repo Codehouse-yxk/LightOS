@@ -187,7 +187,7 @@ RunTask:
 
     add esp, 4  ;mov esp, &(p->rv.eip)
 
-    iret
+    iret    ;pop eip, cs, eflags, esp, ss
 
 [section .sfunc]
 [bits 32]
@@ -347,6 +347,8 @@ SendEOI:
     mov edx, [ebp + 8]
     mov al, 0x20        ;中断结束标志：0x20
     out dx, al
+
+    call Delay
 
     leave
     ret
