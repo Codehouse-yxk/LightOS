@@ -36,11 +36,13 @@ typedef struct {
 } IdtInfo;
 
 typedef struct {
+    /* 段寄存器 */
     uint gs;
     uint fs;
     uint es;
     uint ds;
 
+    /* 通用寄存器 */
     uint edi;
     uint esi;
     uint ebp;
@@ -51,6 +53,7 @@ typedef struct {
     uint eax;
 
     uint raddr;
+
     uint eip;
     uint cs;
     uint eflags;

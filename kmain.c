@@ -7,6 +7,9 @@ Task p = {0};
 void (*const InitInterrupt)() = NULL;
 void (*const EnableTimer)() = NULL;
 void (*const SendEOI)(uint port) = NULL;
+void TimeHandleEntry();
+
+Task* gCTaskAddr = NULL;
 
 void Delay(int n)
 {
@@ -39,7 +42,7 @@ void TaskA()
     }
 }
 
-void Timerhandler()
+void TimerHandler()
 {
     static uint i = 0;
     static uint j = 0;
@@ -53,8 +56,6 @@ void Timerhandler()
     }
     
     SendEOI(MASTER_EOI_PORT);
-
-    asm volatile("leave\n" "iret\n");   //中断返回必须用iret
 }
 
 /**
@@ -122,7 +123,7 @@ void KMain()
 
     //设置内核栈
     p.tss.ss0 = GDT_DATA32_FLAT_SELECTOR; //设置高特权级下的栈
-    p.tss.esp0 = 0x9000;
+    p.tss.esp0 = (uint)&p.rv + sizeof(p.rv);
     p.tss.iomb = sizeof(p.tss);
 
     SetDescValue(p.ldt + LDT_VIDEO_INDEX, 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
@@ -135,11 +136,13 @@ void KMain()
     SetDescValue(&gGdtInfo.entry[GDT_TASK_LDT_INDEX], (uint)&p.ldt, sizeof(p.ldt) - 1, DA_LDT + DA_DPL0);    //在gdt中设置ldt
     SetDescValue(&gGdtInfo.entry[GDT_TASK_TSS_INDEX], (uint)&p.tss, sizeof(p.tss) - 1, DA_386TSS + DA_DPL0); //在gdt中设置tss
 
-    SetIntHandler(gIdtInfo.entry + 0x20, (uint)Timerhandler);
+    SetIntHandler(gIdtInfo.entry + 0x20, (uint)TimeHandleEntry);
 
     InitInterrupt();
 
     EnableTimer();
 
-    RunTask(&p);
+    gCTaskAddr = &p;
+
+    RunTask(gCTaskAddr);
 }
