@@ -162,12 +162,14 @@ StoreGlobal:
     mov dword [InitInterruptEntry], InitInterrupt
     mov dword [EnableTimerEntry], EnableTimer
     mov dword [SendEOIEntry], SendEOI
+    mov dword [LoadTaskEntry], LoadTask
 
     ret
 
 [section .gfunc]
 [bits 32]
 
+;void RunTask(Task* p)
 ;param : Task* p
 RunTask:
     push ebp
@@ -188,6 +190,19 @@ RunTask:
     add esp, 4  ;mov esp, &(p->rv.eip)
 
     iret    ;pop eip, cs, eflags, esp, ss
+
+;void LoadTask(Task* p)
+LoadTask:
+    push ebp
+    mov ebp, esp
+
+    mov eax, [ebp + 8]
+
+    lldt word [eax + 200]
+
+    leave
+    
+    ret
 
 [section .sfunc]
 [bits 32]

@@ -9,7 +9,9 @@ extern GdtInfo gGdtInfo;
 
 extern IdtInfo gIdtInfo;
 
-extern void (* const RunTask)(Task* pt);
+extern void (*const RunTask)(volatile Task* p);
+
+extern void (*const LoadTask)(volatile Task* p);
 
 
 #endif  //GLOBAL_H

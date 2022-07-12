@@ -15,6 +15,7 @@ RunTaskEntry        equ     BaseOfSharedMemory + 16     ;普通任务函数指�
 InitInterruptEntry  equ     BaseOfSharedMemory + 20     ;初始化中断函数指针
 EnableTimerEntry    equ     BaseOfSharedMemory + 24     ;使能定时器函数指针
 SendEOIEntry        equ     BaseOfSharedMemory + 28     ;结束中断函数指针
+LoadTaskEntry       equ     BaseOfSharedMemory + 32     ;加载任务函数指针
 
 ; PIC-8259A Ports 
 MASTER_ICW1_PORT                        equ     0x20

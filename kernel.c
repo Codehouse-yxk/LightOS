@@ -35,7 +35,7 @@ int GetDescValue(Descriptor *pDesc, uint *pBase, uint *pLimit, ushort *pAttr)
 int SetIntHandler(Gate *pGate, uint ifunc)
 {
     int ret = 0;
-    if (ret = (ifunc != NULL))
+    if (ret = (pGate != NULL))
     {
         pGate->offset1 = ifunc & 0xFFFF;
         pGate->selector = GDT_CODE32_FLAT_SELECTOR;
