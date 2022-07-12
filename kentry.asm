@@ -15,6 +15,7 @@ extern RunTask
 extern InitInterrupt
 extern EnableTimer
 extern SendEOI
+extern LoadTask
 
 ;进入中断（保存上下文）
 ;因为将任务RegValue成员当作内核栈使用，所以才有以下处理方式：
@@ -94,6 +95,9 @@ InitGlobal:
 
     mov eax, dword [SendEOIEntry]
     mov dword [SendEOI], eax
+
+    mov eax, dword [LoadTaskEntry]
+    mov dword [LoadTask], eax
 
     leave
 
