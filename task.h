@@ -55,14 +55,19 @@ typedef struct
 } Task;
 
 
-extern void (*const RunTask)(volatile Task* p);
+/* 汇编中定义的RunTask，通过共享内存获取函数指针 */
+void (*const RunTask)(volatile Task* p);
 
-extern void (*const LoadTask)(volatile Task* p);
+/* 汇编中定义的LoadTask，通过共享内存获取函数指针 */
+void (*const LoadTask)(volatile Task* p);
 
+/* 任务模块初始化 */
 void TaskModInit();
 
+/* 加载任务 */
 void LaunchTask();
 
+/* 任务调度 */
 void Schedule();
 
 #endif //TASK_H
