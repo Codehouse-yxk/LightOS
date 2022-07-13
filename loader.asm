@@ -177,8 +177,8 @@ RunTask:
 
     mov esp, [ebp + 8]      ;mov esp, &(p->rv.gs)
     
-    lldt word [esp + 200]   ;p->ldtSelector
-    ltr word [esp + 202]    ;p->tssSelector
+    lldt word [esp + 96]   ;p->ldtSelector
+    ltr word [esp + 98]    ;p->tssSelector
 
     pop gs  ;p->rv.gs --> gs
     pop fs  ;p->rv.fs --> fs
@@ -198,7 +198,7 @@ LoadTask:
 
     mov eax, [ebp + 8]
 
-    lldt word [eax + 200]
+    lldt word [eax + 96]
 
     leave
     
