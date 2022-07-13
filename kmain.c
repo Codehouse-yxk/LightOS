@@ -3,7 +3,6 @@
  *  内核入口（c） 
  */
 
-#include "kernel.h"
 #include "screen.h"
 #include "task.h"
 #include "interrupt.h"

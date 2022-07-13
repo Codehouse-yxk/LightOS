@@ -1,8 +1,6 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
-#include "const.h"
-#include "type.h"
 #include "kernel.h"
 
 /* 初始化中断，汇编中定义的InitInterrupt，通过共享内存获取函数指针 */
