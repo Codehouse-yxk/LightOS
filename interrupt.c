@@ -2,7 +2,7 @@
 
 /**
  *  中断主模块，包含：中断初始化、中断参数设置等
-*/
+ */
 
 #include "interrupt.h"
 #include "ihandler.h"
@@ -14,6 +14,7 @@ void (*const SendEOI)(uint port) = NULL;
 
 void IntModInit()
 {
+    //设置时钟中断
     SetIntHandler(AddrOff(gIdtInfo.entry, 0x20), (uint)TimerHandlerEntry);
 
     InitInterrupt();
@@ -39,11 +40,10 @@ int GetIntHandler(Gate *pGate, uint *pIfunc)
 {
     int ret = 0;
 
-    if(ret = (pGate && pIfunc))
+    if (ret = (pGate && pIfunc))
     {
         *pIfunc = (pGate->offset2 << 16) | pGate->offset1;
     }
 
     return 0;
 }
-

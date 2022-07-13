@@ -35,9 +35,9 @@ typedef struct {
     const int    size;
 } IdtInfo;
 
-extern GdtInfo gGdtInfo;
+GdtInfo gGdtInfo;
 
-extern IdtInfo gIdtInfo;
+IdtInfo gIdtInfo;
 
 
 /* 设置段描述符的值（基址、界限、属性） */
