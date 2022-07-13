@@ -1,8 +1,10 @@
 
+;内核入口文件（汇编）
+
 %include "common.asm"
 
 global _start
-global TimeHandleEntry
+global TimerHandlerEntry
 
 extern gGdtInfo
 extern gIdtInfo
@@ -103,7 +105,7 @@ InitGlobal:
 
     ret
 
-TimeHandleEntry:
+TimerHandlerEntry:
     BeginISR
     call TimerHandler
     EndISR

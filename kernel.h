@@ -35,56 +35,9 @@ typedef struct {
     const int    size;
 } IdtInfo;
 
-typedef struct {
-    /* 段寄存器 */
-    uint gs;
-    uint fs;
-    uint es;
-    uint ds;
+extern GdtInfo gGdtInfo;
 
-    /* 通用寄存器 */
-    uint edi;
-    uint esi;
-    uint ebp;
-    uint kesp;
-    uint ebx;
-    uint edx;
-    uint ecx;
-    uint eax;
-
-    uint raddr;
-
-    uint eip;
-    uint cs;
-    uint eflags;
-    uint esp;
-    uint ss;
-} RegValue;
-
-typedef struct
-{
-    uint   previous;
-    uint   esp0;
-    uint   ss0;         //0特权级栈，低特权级升高特权级时使用。
-    uint   unused[22];
-    ushort reserved;
-    ushort iomb;
-} TSS;
-
-typedef struct
-{
-    RegValue   rv;          //各个寄存器值
-
-    //处理器数据结构  LDT、TSS、选择子
-    Descriptor ldt[3];
-    TSS        tss;
-    ushort     ldtSelector;
-    ushort     tssSelector;
-
-    uint       id;
-    char       name[8]; 
-    byte       stack[512];      //任务执行时使用的栈
-} Task;
+extern IdtInfo gIdtInfo;
 
 
 /* 设置段描述符的值（基址、界限、属性） */
@@ -92,12 +45,6 @@ int SetDescValue(Descriptor* pDesc, uint base, uint limit, ushort attr);
 
 /* 获取段描述符的值（基址、界限、属性） */
 int GetDescValue(Descriptor* pDesc, uint* pBase, uint* pLimit, ushort* pAttr);
-
-/* 设置中断回调函数 */
-int SetIntHandler(Gate* pGate, uint ifunc);
-
-/* 获取中断回调函数 */
-int GetIntHandler(Gate* pGate, uint* pIfunc);
 
 
 #endif  //KERNEL_H

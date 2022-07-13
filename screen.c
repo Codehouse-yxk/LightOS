@@ -1,4 +1,8 @@
 
+/**
+ * 屏幕打印功能
+*/
+
 #include "screen.h"
 
 static byte gPosW = 0;
