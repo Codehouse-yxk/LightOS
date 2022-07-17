@@ -154,22 +154,22 @@ int PrintIntDec(int n)
 
 int PrintIntHex(uint n)
 {
-	char hex[11] = {'0', 'x'}; // 11 = '0' + 'x' + '8个F' + '结束 0'
-
 	int i = 0;
-	for (i = 9; i >= 2; i--)
+	int ret = 0;
+	ret += PrintChar('0');
+	ret += PrintChar('x');
+	for (i = 28; i >= 0; i-=4)	//从高位向低位打印
 	{
-		int p = 0xF & n;
+		int p = (n >> i) & 0xF;	
 		if (p < 10)
 		{
-			hex[i] = ('0' + p); //将0~9的数字转换为对应字符
+			ret += PrintChar('0' + p); //将0~9的数字转换为对应字符
 		}
 		else
 		{
-			hex[i] = ('A' + p - 10); //将A~F的数字转换为对应字符
+			ret += PrintChar('A' + p - 10); //将A~F的数字转换为对应字符
 		}
-		n >>= 4;
 	}
 
-	return PrintString(hex);
+	return ret;
 }

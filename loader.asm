@@ -189,6 +189,18 @@ RunTask:
 
     add esp, 4  ;mov esp, &(p->rv.eip)
 
+    mov dx, MASTER_IMR_PORT
+    
+    in ax, dx
+
+    %rep 5
+    nop
+    %endrep
+    
+    and ax, 0xFE
+    
+    out dx, al
+
     iret    ;pop eip, cs, eflags, esp, ss
 
 ;void LoadTask(Task* p)

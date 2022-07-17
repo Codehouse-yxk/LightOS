@@ -6,14 +6,19 @@
 #include "task.h"
 #include "utility.h"
 
+#define MAX_RUNNING_TASK 16
+
 void (*const RunTask)(volatile Task *p) = NULL;
 
 void (*const LoadTask)(volatile Task *p) = NULL;
 
-Task taskA = {0};
-Task taskB = {0};
-TSS gTss = {0};
+static TSS gTss = {0};
+
 volatile Task *gCTaskAddr = NULL;
+
+static TaskNode gTaskBuffer[MAX_RUNNING_TASK] = {0};
+
+static Queue gTaskQueue = {0};
 
 void TaskA()
 {
@@ -37,7 +42,35 @@ void TaskB()
     while (1)
     {
         SetPrintPos(10, 16);
-        PrintIntDec(i);
+        PrintChar('a' + i);
+        i = (i + 1) % 10;
+        Delay(2);
+    }
+}
+
+void TaskC()
+{
+    int i = 0;
+    SetPrintPos(0, 17);
+    PrintString("Task C: ");
+    while (1)
+    {
+        SetPrintPos(10, 17);
+        PrintChar('m' + i);
+        i = (i + 1) % 10;
+        Delay(2);
+    }
+}
+
+void TaskD()
+{
+    int i = 0;
+    SetPrintPos(0, 18);
+    PrintString("Task D: ");
+    while (1)
+    {
+        SetPrintPos(10, 18);
+        PrintChar('.' + i);
         i = (i + 1) % 10;
         Delay(2);
     }
@@ -56,11 +89,6 @@ static void InitTask(Task *p, void (*entry)())
     p->rv.eip = (uint)entry;
     p->rv.eflags = 0x3202; //设置IOPL = 3（可以进行IO操作）， IF = 1（响应外部中断）；
 
-    //设置内核栈
-    gTss.ss0 = GDT_DATA32_FLAT_SELECTOR; //设置高特权级下的栈
-    gTss.esp0 = (uint)&p->rv + sizeof(p->rv);
-    gTss.iomb = sizeof(gTss);
-
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
     SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, 0xFFFFF, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
     SetDescValue(AddrOff(p->ldt, LDT_DATA32_INDEX), 0x00000, 0xFFFFF, DA_DRW + DA_32 + DA_DPL3); //设置ldt数据段
@@ -69,35 +97,51 @@ static void InitTask(Task *p, void (*entry)())
     p->tssSelector = GDT_TASK_TSS_SELECTOR;
 
     SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_LDT_INDEX), (uint)&p->ldt, sizeof(p->ldt) - 1, DA_LDT + DA_DPL0); //在gdt中设置ldt
-    SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0);  //在gdt中设置tss
 }
 
 void TaskModInit()
 {
-    InitTask(&taskA, TaskA);
+    //Tss只需要设置一次
+    SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0);  //在gdt中设置tss
 
-    InitTask(&taskB, TaskB);
+    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 0))->task, TaskA);
+    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 1))->task, TaskB);
+    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 2))->task, TaskC);
+    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 3))->task, TaskD);
+
+    Queue_Init(&gTaskQueue);
+    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 0))->head);
+    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 1))->head);
+    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 2))->head);
+    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 3))->head);
+}
+
+static void PrepareForRun(volatile Task *p)
+{
+    //设置内核栈
+    gTss.ss0 = GDT_DATA32_FLAT_SELECTOR; //设置高特权级下的栈
+    gTss.esp0 = (uint)&p->rv + sizeof(p->rv);
+    gTss.iomb = sizeof(gTss);
+
+    //每个任务有自己的ldt，任务切换时需要重新加载
+    SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_LDT_INDEX), (uint)&p->ldt, sizeof(p->ldt) - 1, DA_LDT + DA_DPL0);
 }
 
 void LaunchTask()
 {
-    gCTaskAddr = &taskB;
-
+    gCTaskAddr = &((TaskNode*)AddrOff(gTaskBuffer, 0))->task;
+    PrepareForRun(gCTaskAddr);
     RunTask(gCTaskAddr);
 }
 
 void Schedule()
 {
-    gCTaskAddr = (gCTaskAddr == &taskA) ? &taskB : &taskA;
-
-    if (gCTaskAddr)
+    Queue_Rotate(&gTaskQueue);
+    QueueNode *node = Queue_Front(&gTaskQueue);
+    if (node)
     {
-        gTss.ss0 = GDT_DATA32_FLAT_SELECTOR;
-        gTss.esp0 = (uint)&gCTaskAddr->rv.gs + sizeof(RegValue); //指定初始内核栈
-
-        //每个任务有自己的ldt，任务切换时需要重新加载
-        SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_LDT_INDEX), (uint)&gCTaskAddr->ldt, sizeof(gCTaskAddr->ldt) - 1, DA_LDT + DA_DPL0);
-
+        gCTaskAddr = &Queue_Node(node, TaskNode, head)->task;
+        PrepareForRun(gCTaskAddr);
         LoadTask(gCTaskAddr); //只加载任务的ldt
     }
 }
