@@ -3,6 +3,7 @@
 #define TASK_H
 
 #include "kernel.h"
+#include "queue.h"
 
 typedef struct {
     /* 段寄存器 */
@@ -53,6 +54,12 @@ typedef struct
     char       name[8]; 
     byte       stack[512];      //任务执行时使用的栈
 } Task;
+
+typedef struct
+{
+    QueueNode head;
+    Task task;
+} TaskNode;
 
 
 /* 汇编中定义的RunTask，通过共享内存获取函数指针 */

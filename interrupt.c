@@ -19,7 +19,7 @@ void IntModInit()
 
     InitInterrupt();
 
-    EnableTimer();
+    // EnableTimer();   放到启动任务中去使能，否则会造成时序问题
 }
 
 int SetIntHandler(Gate *pGate, uint ifunc)
