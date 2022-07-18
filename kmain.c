@@ -38,4 +38,7 @@ void KMain()
     IntModInit();
 
     LaunchTask();
+
+    SetPrintPos(0, 20);
+    PrintString("main over");
 }

@@ -19,3 +19,11 @@ void TimerHandler()
 
     SendEOI(MASTER_EOI_PORT);
 }
+
+void SysCallHandler(ushort ax)
+{
+    if(ax == 0)
+    {
+        KillTask();
+    }
+}
