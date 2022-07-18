@@ -14,8 +14,9 @@ void (*const SendEOI)(uint port) = NULL;
 
 void IntModInit()
 {
-    //设置时钟中断
+    //设置中断入口
     SetIntHandler(AddrOff(gIdtInfo.entry, 0x20), (uint)TimerHandlerEntry);
+    SetIntHandler(AddrOff(gIdtInfo.entry, 0x80), (uint)SysCallHandlerEntry);
 
     InitInterrupt();
 
@@ -30,7 +31,7 @@ int SetIntHandler(Gate *pGate, uint ifunc)
         pGate->offset1 = ifunc & 0xFFFF;
         pGate->selector = GDT_CODE32_FLAT_SELECTOR;
         pGate->dcount = 0;
-        pGate->attr = DA_386IGate + DA_DPL0;
+        pGate->attr = DA_386IGate + DA_DPL3;        //todo:为什么int80和int20都用DPL3，int20不是从用户态进入中断的。
         pGate->offset2 = (ifunc >> 16) & 0xFFFF;
     }
     return ret;

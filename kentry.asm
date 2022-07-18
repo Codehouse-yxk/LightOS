@@ -5,12 +5,14 @@
 
 global _start
 global TimerHandlerEntry
+global SysCallHandlerEntry
 
 extern gGdtInfo
 extern gIdtInfo
 extern gCTaskAddr
 
 extern TimerHandler
+extern SysCallHandler
 extern KMain
 extern ClearScreen
 extern RunTask
@@ -110,6 +112,12 @@ TimerHandlerEntry:
     call TimerHandler
     EndISR
 
+SysCallHandlerEntry:
+    BeginISR
+    push ax
+    call SysCallHandler
+    pop ax
+    EndISR
     
 
     

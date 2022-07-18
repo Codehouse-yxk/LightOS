@@ -50,6 +50,7 @@ typedef struct
     ushort     ldtSelector;
     ushort     tssSelector;
 
+    void       (*tmain)();
     uint       id;
     char       name[8]; 
     byte       stack[512];      //任务执行时使用的栈
@@ -76,5 +77,8 @@ void LaunchTask();
 
 /* 任务调度 */
 void Schedule();
+
+/* 任务销毁 */
+void KillTask();
 
 #endif //TASK_H

@@ -20,18 +20,36 @@ static TaskNode gTaskBuffer[MAX_RUNNING_TASK] = {0};
 
 static Queue gTaskQueue = {0};
 
+/* 所有任务入口函数 */
+static void TaskEntry()
+{
+    if(gCTaskAddr)
+    {
+        gCTaskAddr->tmain();
+    }
+
+    //触发0x80软中断，陷入内核态销毁任务
+    asm volatile(
+        "movw $0, %ax \n"
+        "int $0x80 \n"
+    );
+    while(1);
+}
+
 void TaskA()
 {
     int i = 0;
     SetPrintPos(0, 15);
     PrintString("Task A: ");
-    while (1)
+    while (i < 5)
     {
         SetPrintPos(10, 15);
         PrintChar('A' + i);
         i = (i + 1) % 26;
         Delay(2);
     }
+    SetPrintPos(10, 15);
+    PrintString("end Task A");
 }
 
 void TaskB()
@@ -86,8 +104,10 @@ static void InitTask(Task *p, void (*entry)())
     p->rv.ss = LDT_DATA32_SELECTOR;
 
     p->rv.esp = (uint)p->stack + sizeof(p->stack); //任务私有栈
-    p->rv.eip = (uint)entry;
+    p->rv.eip = (uint)TaskEntry;
     p->rv.eflags = 0x3202; //设置IOPL = 3（可以进行IO操作）， IF = 1（响应外部中断）；
+    
+    p->tmain = entry;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
     SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, 0xFFFFF, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
@@ -131,7 +151,7 @@ void LaunchTask()
 {
     gCTaskAddr = &((TaskNode*)AddrOff(gTaskBuffer, 0))->task;
     PrepareForRun(gCTaskAddr);
-    RunTask(gCTaskAddr);
+    RunTask(gCTaskAddr);        //启动第一个任务
 }
 
 void Schedule()
@@ -144,4 +164,9 @@ void Schedule()
         PrepareForRun(gCTaskAddr);
         LoadTask(gCTaskAddr); //只加载任务的ldt
     }
+}
+
+void KillTask()
+{
+    PrintString("   kill task");
 }
