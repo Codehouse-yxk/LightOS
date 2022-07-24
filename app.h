@@ -8,6 +8,7 @@
 typedef struct{
     const char* name;
     void (*tmain)();
+    byte priority;  //数值越小，优先级越高（可获取时间片越久），最大值：255
 }AppInfo;
 
 /* 应用层任务模块初始化 */

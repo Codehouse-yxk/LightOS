@@ -7,9 +7,10 @@
 #include "utility.h"
 #include "app.h"
 
-#define MAX_TASK_NUM 4      //最大任务数量
-#define MAX_RUNNING_TASK 2  //最大处于运行态任务数量
-#define MAX_READY_TASK (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
+#define MAX_TASK_NUM        4       //最大任务数量
+#define MAX_RUNNING_TASK    2       //最大处于运行态任务数量
+#define MAX_READY_TASK      (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
+#define PID_BASE            0x10    
 
 // extern AppInfo *GetAppToRun(uint index);
 // extern uint GetAppNum();
@@ -29,6 +30,7 @@ static Queue gWaittingTask = {0}; //等待队列
 static uint gAppToRunIndex = 0;
 
 static TaskNode gIdleTask = {0};    //默认任务
+static uint gPid = PID_BASE;
 
 /* 所有任务入口函数 */
 static void TaskEntry()
@@ -45,7 +47,7 @@ static void TaskEntry()
     );
 }
 
-static void InitTask(Task *p, const char* name, void (*entry)())
+static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort pri)
 {
     p->rv.cs = LDT_CODE32_SELECTOR;
     p->rv.gs = LDT_VIDEO_SELECTOR;
@@ -60,6 +62,9 @@ static void InitTask(Task *p, const char* name, void (*entry)())
 
     StrCpy(p->name, name, sizeof(p->name)-1);
     p->tmain = entry;
+    p->id = id;
+    p->total = 256 - pri;
+    p->current = 0;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
     SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, 0xFFFFF, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
@@ -71,6 +76,8 @@ static void InitTask(Task *p, const char* name, void (*entry)())
 
 static void PrepareForRun(volatile Task *p)
 {
+    p->current++;
+
     //设置内核栈
     gTss.ss0 = GDT_DATA32_FLAT_SELECTOR; //设置高特权级下的栈
     gTss.esp0 = (uint)&p->rv + sizeof(p->rv);
@@ -93,7 +100,7 @@ static void CreatTask()
         if (tn)
         {
             AppInfo* app = GetAppToRun(gAppToRunIndex);
-            InitTask(&tn->task, app->name, app->tmain);
+            InitTask(&tn->task, gPid++, app->name, app->tmain, app->priority);
             Queue_Add(&gReadyTask, (QueueNode*)tn);
         }
         else
@@ -127,7 +134,7 @@ static void ReadyToRunning()
 {
     QueueNode* node = NULL;
 
-    if(Queue_Length(&gReadyTask) == 0)
+    if(Queue_Length(&gReadyTask) < MAX_READY_TASK)
     {
         CreatTask();
     }
@@ -135,7 +142,26 @@ static void ReadyToRunning()
     while((Queue_Length(&gReadyTask)>0) && (Queue_Length(&gRunningTask)<MAX_RUNNING_TASK))
     {
         node = Queue_Remove(&gReadyTask);
+
+        ((TaskNode*)node)->task.current = 0;
+
         Queue_Add(&gRunningTask, node);
+    }
+}
+
+/* 将运行队列任务切换到就绪队列 */
+static void RunningToReady()
+{
+    TaskNode* tn = (TaskNode*)Queue_Front(&gRunningTask);
+
+    if(!isEqual(tn, &gIdleTask))
+    {
+        if(tn->task.current == tn->task.total)
+        {
+            Queue_Remove(&gRunningTask);
+
+            Queue_Add(&gReadyTask, (QueueNode*)tn);
+        }
     }
 }
 
@@ -170,12 +196,11 @@ void TaskModInit()
     // Tss共用，只需要设置一次
     SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0); //在gdt中设置tss
 
-    InitTask(&gIdleTask.task, "IdleTask", IdleTask);
+    InitTask(&gIdleTask.task, gPid++, "IdleTask", IdleTask, 255);
 
     ReadyToRunning();
+
     CheckRunningTask();
-    //模块初始化完成后，开始调度
-    //Schedule();
 }
 
 void LaunchTask()
@@ -187,7 +212,9 @@ void LaunchTask()
 
 void Schedule()
 {
-    ReadyToRunning();
+    RunningToReady();   //判断运行态的任务是否需要切换到就绪态
+
+    ReadyToRunning();   //就绪态任务切换到运行态
 
     CheckRunningTask();
 

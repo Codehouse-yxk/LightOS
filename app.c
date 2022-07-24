@@ -16,23 +16,24 @@ void TaskB();
 void TaskC();
 void TaskD();
 
-static void RegApp(const char *name, void (*tmain)())
+static void RegApp(const char *name, void (*tmain)(), byte priority)
 {
     if (gAppNum < MAX_APP_NUM)
     {
         AppInfo *app = AddrOff(gAppToRun, gAppNum);
         app->name = name;
         app->tmain = tmain;
+        app->priority = priority;
         gAppNum++;
     }
 }
 
 void AppModInit()
 {
-    RegApp("Task A", TaskA);
-    RegApp("Task B", TaskB);
-    RegApp("Task C", TaskC);
-    RegApp("Task D", TaskD);
+    RegApp("Task A", TaskA, 250);
+    RegApp("Task B", TaskB, 220);
+    RegApp("Task C", TaskC, 220);
+    RegApp("Task D", TaskD, 240);
 }
 
 AppInfo *GetAppToRun(uint index)
@@ -71,7 +72,7 @@ void TaskB()
     int i = 0;
     SetPrintPos(0, 16);
     PrintString("Task B: ");
-    while (i < 5)
+    while (1)
     {
         SetPrintPos(10, 16);
         PrintChar('a' + i);
@@ -85,7 +86,7 @@ void TaskC()
     int i = 0;
     SetPrintPos(0, 17);
     PrintString("Task C: ");
-    while (i < 5)
+    while (1)
     {
         SetPrintPos(10, 17);
         PrintChar('m' + i);
@@ -99,7 +100,7 @@ void TaskD()
     int i = 0;
     SetPrintPos(0, 18);
     PrintString("Task D: ");
-    while (i < 5)
+    while (1)
     {
         SetPrintPos(10, 18);
         PrintChar('.' + i);
