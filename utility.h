@@ -26,4 +26,7 @@
 /* 延时函数 */
 void Delay(int n);
 
+/* 字符串拷贝函数 */
+char* StrCpy(char* dst, const char* src, int n);
+
 #endif //UTILITY_H

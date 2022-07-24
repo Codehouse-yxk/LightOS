@@ -9,7 +9,8 @@ KERNEL_SRC := 	kmain.c 	\
 				interrupt.c \
 				ihandler.c	\
 				list.c		\
-				queue.c
+				queue.c		\
+				app.c
 
 KERNEL_ADDR := B000
 IMG := LightOS
