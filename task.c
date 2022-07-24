@@ -1,29 +1,39 @@
 
 /**
- * 任务模块，包含：任务初始化、任务调度等功能
+ * 内核任务模块，包含：任务初始化、任务调度等功能
  */
 
 #include "task.h"
 #include "utility.h"
+#include "app.h"
 
-#define MAX_RUNNING_TASK 16
+#define MAX_TASK_NUM 4      //最大任务数量
+#define MAX_RUNNING_TASK 2  //最大处于运行态任务数量
+#define MAX_READY_TASK (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
+
+// extern AppInfo *GetAppToRun(uint index);
+// extern uint GetAppNum();
 
 void (*const RunTask)(volatile Task *p) = NULL;
-
 void (*const LoadTask)(volatile Task *p) = NULL;
 
 static TSS gTss = {0};
-
 volatile Task *gCTaskAddr = NULL;
+static TaskNode gTaskBuffer[MAX_TASK_NUM] = {0};
 
-static TaskNode gTaskBuffer[MAX_RUNNING_TASK] = {0};
+static Queue gFreeTask = {0};     //空闲队列
+static Queue gReadyTask = {0};    //就绪队列
+static Queue gRunningTask = {0};  //运行队列
+static Queue gWaittingTask = {0}; //等待队列
 
-static Queue gTaskQueue = {0};
+static uint gAppToRunIndex = 0;
+
+static TaskNode gIdleTask = {0};    //默认任务
 
 /* 所有任务入口函数 */
 static void TaskEntry()
 {
-    if(gCTaskAddr)
+    if (gCTaskAddr)
     {
         gCTaskAddr->tmain();
     }
@@ -33,68 +43,9 @@ static void TaskEntry()
         "movw $0, %ax \n"
         "int $0x80 \n"
     );
-    while(1);
 }
 
-void TaskA()
-{
-    int i = 0;
-    SetPrintPos(0, 15);
-    PrintString("Task A: ");
-    while (i < 5)
-    {
-        SetPrintPos(10, 15);
-        PrintChar('A' + i);
-        i = (i + 1) % 26;
-        Delay(2);
-    }
-    SetPrintPos(10, 15);
-    PrintString("end Task A");
-}
-
-void TaskB()
-{
-    int i = 0;
-    SetPrintPos(0, 16);
-    PrintString("Task B: ");
-    while (1)
-    {
-        SetPrintPos(10, 16);
-        PrintChar('a' + i);
-        i = (i + 1) % 10;
-        Delay(2);
-    }
-}
-
-void TaskC()
-{
-    int i = 0;
-    SetPrintPos(0, 17);
-    PrintString("Task C: ");
-    while (1)
-    {
-        SetPrintPos(10, 17);
-        PrintChar('m' + i);
-        i = (i + 1) % 10;
-        Delay(2);
-    }
-}
-
-void TaskD()
-{
-    int i = 0;
-    SetPrintPos(0, 18);
-    PrintString("Task D: ");
-    while (1)
-    {
-        SetPrintPos(10, 18);
-        PrintChar('.' + i);
-        i = (i + 1) % 10;
-        Delay(2);
-    }
-}
-
-static void InitTask(Task *p, void (*entry)())
+static void InitTask(Task *p, const char* name, void (*entry)())
 {
     p->rv.cs = LDT_CODE32_SELECTOR;
     p->rv.gs = LDT_VIDEO_SELECTOR;
@@ -106,7 +57,8 @@ static void InitTask(Task *p, void (*entry)())
     p->rv.esp = (uint)p->stack + sizeof(p->stack); //任务私有栈
     p->rv.eip = (uint)TaskEntry;
     p->rv.eflags = 0x3202; //设置IOPL = 3（可以进行IO操作）， IF = 1（响应外部中断）；
-    
+
+    StrCpy(p->name, name, sizeof(p->name)-1);
     p->tmain = entry;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
@@ -115,25 +67,6 @@ static void InitTask(Task *p, void (*entry)())
 
     p->ldtSelector = GDT_TASK_LDT_SELECTOR;
     p->tssSelector = GDT_TASK_TSS_SELECTOR;
-
-    SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_LDT_INDEX), (uint)&p->ldt, sizeof(p->ldt) - 1, DA_LDT + DA_DPL0); //在gdt中设置ldt
-}
-
-void TaskModInit()
-{
-    //Tss只需要设置一次
-    SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0);  //在gdt中设置tss
-
-    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 0))->task, TaskA);
-    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 1))->task, TaskB);
-    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 2))->task, TaskC);
-    InitTask(&((TaskNode*)AddrOff(gTaskBuffer, 3))->task, TaskD);
-
-    Queue_Init(&gTaskQueue);
-    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 0))->head);
-    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 1))->head);
-    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 2))->head);
-    Queue_Add(&gTaskQueue, &((TaskNode*)AddrOff(gTaskBuffer, 3))->head);
 }
 
 static void PrepareForRun(volatile Task *p)
@@ -147,17 +80,120 @@ static void PrepareForRun(volatile Task *p)
     SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_LDT_INDEX), (uint)&p->ldt, sizeof(p->ldt) - 1, DA_LDT + DA_DPL0);
 }
 
+/* 根据业务app，创建任务，并将任务放入就绪队列 */
+static void CreatTask()
+{
+    uint num = GetAppNum();
+
+    //判断所有要执行的任务有没有全部创建，并且就绪队列有空位
+    while ((gAppToRunIndex < num) && (Queue_Length(&gReadyTask) < MAX_READY_TASK))
+    {
+        TaskNode *tn = (TaskNode *)Queue_Remove(&gFreeTask);
+
+        if (tn)
+        {
+            AppInfo* app = GetAppToRun(gAppToRunIndex);
+            InitTask(&tn->task, app->name, app->tmain);
+            Queue_Add(&gReadyTask, (QueueNode*)tn);
+        }
+        else
+        {
+            break;
+        }
+        gAppToRunIndex++;
+    }
+}
+
+/* 检测运行中的任务，如果没有业务任务，需要运行内核默认gIdleTask */
+static CheckRunningTask()
+{
+    int len = Queue_Length(&gRunningTask);
+    if(len == 0)
+    {
+        Queue_Add(&gRunningTask, (QueueNode*)&gIdleTask);
+    }
+    else if(len > 1)
+    {
+        //如果有任务，此时不能有默认的gIdleTask，所以将默认的gIdleTask从运行队列中删掉
+        if(isEqual(Queue_Front(&gRunningTask), (QueueNode*)&gIdleTask))
+        {
+            Queue_Remove(&gRunningTask);
+        }
+    }
+}
+
+/* 准备任务，并将任务切换到运行态 */
+static void ReadyToRunning()
+{
+    QueueNode* node = NULL;
+
+    if(Queue_Length(&gReadyTask) == 0)
+    {
+        CreatTask();
+    }
+
+    while((Queue_Length(&gReadyTask)>0) && (Queue_Length(&gRunningTask)<MAX_RUNNING_TASK))
+    {
+        node = Queue_Remove(&gReadyTask);
+        Queue_Add(&gRunningTask, node);
+    }
+}
+
+void IdleTask()
+{
+    int i = 0;
+    SetPrintPos(0, 14);
+    PrintString("Task Idle: ");
+    while (1)
+    {
+        SetPrintPos(11, 14);
+        PrintChar('A' + i);
+        i = (i + 1) % 10;
+        Delay(1);
+    }
+}
+
+void TaskModInit()
+{
+    int i = 0;
+
+    Queue_Init(&gFreeTask);
+    Queue_Init(&gWaittingTask);
+    Queue_Init(&gReadyTask);
+    Queue_Init(&gRunningTask);
+
+    for (i = 0; i < MAX_TASK_NUM; i++)
+    {
+        Queue_Add(&gFreeTask, (QueueNode *)AddrOff(gTaskBuffer, i));
+    }
+
+    // Tss共用，只需要设置一次
+    SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0); //在gdt中设置tss
+
+    InitTask(&gIdleTask.task, "IdleTask", IdleTask);
+
+    ReadyToRunning();
+    CheckRunningTask();
+    //模块初始化完成后，开始调度
+    //Schedule();
+}
+
 void LaunchTask()
 {
-    gCTaskAddr = &((TaskNode*)AddrOff(gTaskBuffer, 0))->task;
+    gCTaskAddr = &((TaskNode*)Queue_Front(&gRunningTask))->task;
     PrepareForRun(gCTaskAddr);
-    RunTask(gCTaskAddr);        //启动第一个任务
+    RunTask(gCTaskAddr); //启动第一个任务
 }
 
 void Schedule()
 {
-    Queue_Rotate(&gTaskQueue);
-    QueueNode *node = Queue_Front(&gTaskQueue);
+    ReadyToRunning();
+
+    CheckRunningTask();
+
+    Queue_Rotate(&gRunningTask);
+
+    QueueNode *node = Queue_Front(&gRunningTask);
     if (node)
     {
         gCTaskAddr = &Queue_Node(node, TaskNode, head)->task;
@@ -168,5 +204,9 @@ void Schedule()
 
 void KillTask()
 {
-    PrintString("   kill task");
+    QueueNode* node = Queue_Remove(&gRunningTask);
+
+    Queue_Add(&gFreeTask, node);
+
+    Schedule();
 }
