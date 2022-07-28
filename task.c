@@ -12,8 +12,8 @@
 #define MAX_READY_TASK      (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
 #define PID_BASE            0x10    
 
-// extern AppInfo *GetAppToRun(uint index);
-// extern uint GetAppNum();
+static AppInfo* (*GetAppToRun)(uint index) = NULL;
+static uint (*GetAppNum)() = NULL;
 
 void (*const RunTask)(volatile Task *p) = NULL;
 void (*const LoadTask)(volatile Task *p) = NULL;
@@ -152,15 +152,18 @@ static void ReadyToRunning()
 /* 将运行队列任务切换到就绪队列 */
 static void RunningToReady()
 {
-    TaskNode* tn = (TaskNode*)Queue_Front(&gRunningTask);
-
-    if(!isEqual(tn, &gIdleTask))
+    if(Queue_Length(&gRunningTask) > 0)
     {
-        if(tn->task.current == tn->task.total)
-        {
-            Queue_Remove(&gRunningTask);
+        TaskNode* tn = (TaskNode*)Queue_Front(&gRunningTask);
 
-            Queue_Add(&gReadyTask, (QueueNode*)tn);
+        if(!isEqual(tn, (QueueNode*)&gIdleTask))
+        {
+            if(tn->task.current == tn->task.total)
+            {
+                Queue_Remove(&gRunningTask);
+
+                Queue_Add(&gReadyTask, (QueueNode*)tn);
+            }
         }
     }
 }
@@ -182,6 +185,9 @@ void IdleTask()
 void TaskModInit()
 {
     int i = 0;
+
+    GetAppToRun = (void*)(*((uint*)GetAppToRunEntry));
+    GetAppNum = (void*)(*((uint*)GetAppNumEntry));
 
     Queue_Init(&gFreeTask);
     Queue_Init(&gWaittingTask);

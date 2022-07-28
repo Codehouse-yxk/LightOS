@@ -28,7 +28,7 @@ static void RegApp(const char *name, void (*tmain)(), byte priority)
     }
 }
 
-void AppModInit()
+void AppMain()
 {
     RegApp("Task A", TaskA, 250);
     RegApp("Task B", TaskB, 220);

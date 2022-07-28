@@ -3,10 +3,12 @@
 BaseOfBoot    equ    0x7C00     ;启动程序加载地址
 BaseOfLoader  equ    0x9000     ;Bootloader加载地址
 BaseOfKernel  equ    0xB000     ;内核加载地址
+BaseOfApp     equ    0xF000    ;App加载地址
 
 BaseOfSharedMemory  equ 0xA000  ;共享内存起始地址
 
 ; Shared value Address
+;kernal:
 GdtEntry            equ     BaseOfSharedMemory + 0      ;全局段描述符表起始地址
 GdtSize             equ     BaseOfSharedMemory + 4      ;全局段描述符表大小
 IdtEntry            equ     BaseOfSharedMemory + 8      ;中断描述符表起始地址
@@ -16,6 +18,10 @@ InitInterruptEntry  equ     BaseOfSharedMemory + 20     ;初始化中断函数�
 EnableTimerEntry    equ     BaseOfSharedMemory + 24     ;使能定时器函数指针
 SendEOIEntry        equ     BaseOfSharedMemory + 28     ;结束中断函数指针
 LoadTaskEntry       equ     BaseOfSharedMemory + 32     ;加载任务函数指针
+;App
+GetAppToRunEntry    equ     BaseOfSharedMemory + 36
+GetAppNumEntry      equ     BaseOfSharedMemory + 40
+
 
 ; PIC-8259A Ports 
 MASTER_ICW1_PORT                        equ     0x20

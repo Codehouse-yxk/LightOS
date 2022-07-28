@@ -35,22 +35,28 @@ const:
 _start:
     jmp BLMain
     
-;
+;unshort LoadTarget( char* Target,          目标文件名  实模式下：sizeof(char*) = 2
+;                    ushort TarLen,         目标文件大小
+;                    ushort BaseOfTarget,   记载目标内存位置
+;                    ushort BaseOfTarget/10,
+;                    char* Buffer,          加载目录项的内存Buffer                 
+;                   )
 ; return:
 ;     dx --> (dx != 0) ? success : failure
 LoadTarget:
+    mov bp, sp  ;bp指向栈顶，便于取参数
 
 	;①将目录项的内容读到内存中
 	mov ax, RootEntryOffset
 	mov cx, RootEntryLength
-	mov bx, Buffer
+	mov bx, [bp + 10]   ;mov bx, Buffer
 	
 	call ReadSector
 	
 	;②查找目标文件
-	mov si, Target
-	mov cx, TarLen
-	mov dx, 0
+	mov si, [bp + 2]    ;mov si, Target
+	mov cx, [bp + 4]    ;mov cx, TarLen
+	xor dx, dx          ;mov dx, 0
 	
 	call FindEntry
 	
@@ -63,13 +69,15 @@ LoadTarget:
 	mov cx, EntryItemLength
 	
 	call MemCpy
+
+    mov bp, sp
 	
 	;④加载fat表
 	mov ax, FatEntryLength	;计算fat表占用内存大小
 	mov cx, [BPB_BytsPerSec]
 	mul cx
-	mov bx, BaseOfTarget
-	sub bx, ax				;得到的bx就是fat表在内存中的起始地址
+	mov bx, [bp + 6]    ;mov bx, BaseOfTarget
+	sub bx, ax			;得到的bx就是fat表在内存中的起始地址
 	
 	mov ax, FatEntryOffset
 	mov cx, FatEntryLength
@@ -78,9 +86,8 @@ LoadTarget:
 	
 	;⑤从fat表查找目标文件
 	mov dx, [EntryItem + 0x1A]	;得到目标文件第一个扇区的地址
-	mov si, BaseOfTarget / 0x10
-	mov es, si
-	mov si, 0
+	mov es, [bp + 8]    ;mov si, BaseOfTarget / 0x10
+	xor si, si          ;mov si, 0
 	
 loading:
     mov ax, dx
@@ -261,21 +268,21 @@ noequal:
 
 ; es:bp --> string address
 ; cx    --> string length
-Print:
-    mov dx, 0
-    mov ax, 0x1301
-	mov bx, 0x0007
-	int 0x10
-    ret
+; Print:
+;     mov dx, 0
+;     mov ax, 0x1301
+; 	mov bx, 0x0007
+; 	int 0x10
+;     ret
 
 ; 重置软驱函数 no parameter
-ResetFloppy:
-    push ax
-    mov ah, 0x00
-    mov dl, [BS_DrvNum]	;驱动器号
-    int 0x13			;中断
-    pop ax
-    ret
+; ResetFloppy:
+;     push ax
+;     mov ah, 0x00
+;     mov dl, [BS_DrvNum]	;驱动器号
+;     int 0x13			;中断
+;     pop ax
+;     ret
 
 ; 读取软驱数据函数：
 ; ax    --> logic sector number（逻辑扇区号）
@@ -283,7 +290,11 @@ ResetFloppy:
 ; es:bx --> target address（需要将数据读取到的地址）
 ReadSector:
     
-    call ResetFloppy
+    ;call ResetFloppy
+
+    mov ah, 0x00
+    mov dl, [BS_DrvNum]	;驱动器号
+    int 0x13			;中断
     
     push bx
     push cx

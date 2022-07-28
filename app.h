@@ -12,13 +12,13 @@ typedef struct{
 }AppInfo;
 
 /* 应用层任务模块初始化 */
-void AppModInt();
+// void AppModInt();
 
 /* 获取指定任务执行 */
-AppInfo* GetAppToRun(uint index);
+// AppInfo* GetAppToRun(uint index);
 
 /* 获取任务数量 */
-uint GetAppNum();
+// uint GetAppNum();
 
 
 

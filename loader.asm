@@ -4,11 +4,12 @@
 
 org BaseOfLoader
 
-interface:
-    BaseOfStack    equ    BaseOfLoader
-    BaseOfTarget   equ    BaseOfKernel
-    Target db  "KERNEL     "
-    TarLen equ ($-Target)
+
+BaseOfStack    equ    BaseOfLoader
+KernalName db  "KERNEL     "
+KernalLen equ ($-KernalName)
+AppName db  "APP        "
+AppLen equ ($-AppName)
 
 [section .gdt]
 ; GDT definition
@@ -86,11 +87,33 @@ BLMain:
     shl eax, 4
     add eax, IDT_ENTRY
     mov dword [IdtPtr + 2], eax
-    
+
+    ;参数入栈-加载应用代码
+    push word Buffer
+    push word BaseOfApp / 0x10
+    push word BaseOfApp
+    push word AppLen
+    push word AppName
+
     call LoadTarget
-	
+	add sp, 10  ;清理栈
 	cmp dx, 0
-	jz output
+	jz AppErr
+
+    mov ax, cs
+    mov es, ax
+    
+    ;参数入栈-加载内核代码
+    push word Buffer
+    push word BaseOfKernel / 0x10
+    push word BaseOfKernel
+    push word KernalLen
+    push word KernalName
+
+    call LoadTarget
+	add sp, 10  ;清理栈
+    cmp dx, 0
+	jz KernelErr
 
     call StoreGlobal
 
@@ -122,10 +145,21 @@ BLMain:
     ;⑤从16位实模式跳转到32位的实模式
     jmp dword Code32Selector : 0
 
-output:	
-    mov bp, ErrStr
-    mov cx, ErrLen
-	call Print
+KernelErr:	
+    mov bp, KernelErrStr
+    mov cx, KernelErrLen
+    jmp output
+AppErr:
+    mov bp, AppErrStr
+    mov cx, AppErrLen
+    jmp output
+output:
+    mov ax, cs
+	mov es, ax
+	xor dx, dx     ;mov dx, 0
+    mov ax, 0x1301
+	mov bx, 0x0007
+	int 0x10
 	
 	jmp $
 
@@ -396,7 +430,7 @@ CODE32_SEGMENT:
     mov ss, ax
     mov esp, BaseOfLoader
 
-    jmp dword Code32FlatSelector : BaseOfTarget
+    jmp dword Code32FlatSelector : BaseOfKernel
 
 ;
 ;
@@ -407,7 +441,10 @@ DefaultHandler    equ    DefaultHandlerFunc - $$
 
 Code32SegLen    equ    $ - CODE32_SEGMENT
 
-ErrStr db  "No KERNEL"	
-ErrLen equ ($-ErrStr)
+KernelErrStr db  "No KERNEL"	
+KernelErrLen equ ($-KernelErrStr)
+
+AppErrStr db  "No App"	
+AppErrLen equ ($-AppErrStr)
 
 Buffer db  0

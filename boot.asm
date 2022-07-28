@@ -6,9 +6,9 @@ org BaseOfBoot
 
 interface:
     BaseOfStack    equ    BaseOfBoot
-    BaseOfTarget   equ    BaseOfLoader
-    Target db  "LOADER     "
-    TarLen equ ($-Target)
+    ;BaseOfTarget   equ    BaseOfLoader
+    LoaderStr db  "LOADER     "
+    LoaderLen equ ($-LoaderStr)
 
 BLMain:
     mov ax, cs
@@ -17,20 +17,35 @@ BLMain:
 	mov es, ax
 	mov sp, SPInitValue
 	
+	;参数入栈
+	push word Buffer
+	push word BaseOfLoader / 0x10
+	push word BaseOfLoader
+	push word LoaderLen
+	push word LoaderStr
+
 	call LoadTarget
+	;add sp, 10	;清理栈
 	
 	cmp dx, 0
 	jz output
-	jmp BaseOfTarget
+	jmp BaseOfLoader
 	
 output:	
+	mov ax, cs
+	mov es, ax
+
     mov bp, ErrStr
     mov cx, ErrLen
-	call Print
+	
+	xor dx, dx     ;mov dx, 0
+    mov ax, 0x1301
+	mov bx, 0x0007
+	int 0x10
 	
 	jmp $	
 
-ErrStr db  "No LOADER"	
+ErrStr db  "NLD"	
 ErrLen equ ($-ErrStr)
 
 Buffer:

@@ -6,14 +6,14 @@
 #include "screen.h"
 #include "task.h"
 #include "interrupt.h"
-#include "app.h"
-
 
 /**
  * 内核入口函数
  */
 void KMain()
 {
+    void (*AppModInit)() = (void*)BaseOfApp;
+
     SetPrintColor(SCREEN_RED);
 
     PrintString("LightOS\n\n");
