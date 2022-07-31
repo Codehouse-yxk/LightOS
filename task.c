@@ -10,6 +10,7 @@
 #define MAX_TASK_NUM        4       //最大任务数量
 #define MAX_RUNNING_TASK    2       //最大处于运行态任务数量
 #define MAX_READY_TASK      (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
+#define MAX_TASK_BUFF_NUM   (MAX_TASK_NUM + 1)
 #define PID_BASE            0x10    
 
 static AppInfo* (*GetAppToRun)(uint index) = NULL;
@@ -20,8 +21,7 @@ void (*const LoadTask)(volatile Task *p) = NULL;
 
 static TSS gTss = {0};
 volatile Task *gCTaskAddr = NULL;
-// static TaskNode gTaskBuffer[MAX_TASK_NUM] = {0};
-static TaskNode* gTaskBuffer = NULL;
+static TaskNode gTaskBuffer[MAX_TASK_NUM] = {0};
 
 static Queue gFreeTask = {0};     //空闲队列
 static Queue gReadyTask = {0};    //就绪队列
@@ -30,8 +30,7 @@ static Queue gWaittingTask = {0}; //等待队列
 
 static uint gAppToRunIndex = 0;
 
-// static TaskNode gIdleTask = {0};    //默认任务
-static TaskNode* gIdleTask = NULL;
+static TaskNode gIdleTask = {0};    //默认任务
 
 static uint gPid = PID_BASE;
 
@@ -59,7 +58,7 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->rv.fs = LDT_DATA32_SELECTOR;
     p->rv.ss = LDT_DATA32_SELECTOR;
 
-    p->rv.esp = (uint)p->stack + sizeof(p->stack); //任务私有栈
+    p->rv.esp = (uint)p->stack + AppTaskSize; //任务私有栈
     p->rv.eip = (uint)TaskEntry;
     p->rv.eflags = 0x3202; //设置IOPL = 3（可以进行IO操作）， IF = 1（响应外部中断）；
 
@@ -70,8 +69,8 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->current = 0;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
-    SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, 0x4FFFF, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
-    SetDescValue(AddrOff(p->ldt, LDT_DATA32_INDEX), 0x00000, 0x4FFFF, DA_DRW + DA_32 + DA_DPL3); //设置ldt数据段
+    SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, PageDirBase - 1, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
+    SetDescValue(AddrOff(p->ldt, LDT_DATA32_INDEX), 0x00000, PageDirBase - 1, DA_DRW + DA_32 + DA_DPL3); //设置ldt数据段
 
     p->ldtSelector = GDT_TASK_LDT_SELECTOR;
     p->tssSelector = GDT_TASK_TSS_SELECTOR;
@@ -120,12 +119,12 @@ static CheckRunningTask()
     int len = Queue_Length(&gRunningTask);
     if(len == 0)
     {
-        Queue_Add(&gRunningTask, (QueueNode*)gIdleTask);
+        Queue_Add(&gRunningTask, (QueueNode*)&gIdleTask);
     }
     else if(len > 1)
     {
         //如果有任务，此时不能有默认的gIdleTask，所以将默认的gIdleTask从运行队列中删掉
-        if(isEqual(Queue_Front(&gRunningTask), (QueueNode*)gIdleTask))
+        if(isEqual(Queue_Front(&gRunningTask), (QueueNode*)&gIdleTask))
         {
             Queue_Remove(&gRunningTask);
         }
@@ -159,7 +158,7 @@ static void RunningToReady()
     {
         TaskNode* tn = (TaskNode*)Queue_Front(&gRunningTask);
 
-        if(!isEqual(tn, (QueueNode*)gIdleTask))
+        if(!isEqual(tn, (QueueNode*)&gIdleTask))
         {
             if(tn->task.current == tn->task.total)
             {
@@ -190,8 +189,13 @@ void TaskModInit()
 {
     int i = 0;
 
-    gTaskBuffer = (void*)0x40000;
-    gIdleTask = (void*)AddrOff(gTaskBuffer, MAX_TASK_NUM);
+    byte* pStack = (byte*)(PageDirBase - (AppTaskSize * MAX_TASK_BUFF_NUM));
+
+    for(i = 0; i < MAX_TASK_BUFF_NUM; i++)
+    {
+        TaskNode* tn = (void*)AddrOff(gTaskBuffer, i);
+        tn->task.stack = (void*)AddrOff(pStack, i * AppTaskSize);
+    }
 
     GetAppToRun = (void*)(*((uint*)GetAppToRunEntry));
     GetAppNum = (void*)(*((uint*)GetAppNumEntry));
@@ -209,7 +213,7 @@ void TaskModInit()
     // Tss共用，只需要设置一次
     SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0); //在gdt中设置tss
 
-    InitTask(&gIdleTask->task, gPid++, "IdleTask", IdleTask, 255);
+    InitTask(&gIdleTask.task, gPid++, "IdleTask", IdleTask, 255);
 
     ReadyToRunning();
 

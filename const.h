@@ -5,7 +5,9 @@
 #define NULL  ((void*)0)
 
 #define PageDirBase  0x50000	//页目录基地址
-#define PageTblBase  0x51000	//页表基地址
+#define PageTblBase  (PageDirBase + 0x1000)	//页表基地址
+
+#define AppTaskSize     512
 
 #define BaseOfKernel    0xB000
 #define BaseOfApp       0xF000

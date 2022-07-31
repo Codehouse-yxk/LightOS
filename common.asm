@@ -24,7 +24,7 @@ GetAppNumEntry      equ     BaseOfSharedMemory + 40
 
 
 PageDirBase    equ    0x50000	;页目录基地址
-PageTblBase    equ    0x51000	;页表基地址
+PageTblBase    equ    PageDirBase + 0x1000	;页表基地址
 
 
 ; PIC-8259A Ports 
