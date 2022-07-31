@@ -58,6 +58,12 @@ void TaskA()
     PrintString("Task A: ");
     while (i < 5)
     {
+        //  强制修改内核内存空间，测试异常
+        // if(i == 2)
+        // {
+        //     uint* p = (uint*)0x50000;
+        //     *p = 10;
+        // }
         SetPrintPos(10, 15);
         PrintChar('A' + i);
         i = (i + 1) % 26;

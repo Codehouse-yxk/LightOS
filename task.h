@@ -54,7 +54,7 @@ typedef struct
     uint       id;
     ushort     current; //表示任务当前已执行的时间数
     ushort     total;   //表示任务每次执行的总时间数
-    char       name[8]; 
+    char       name[10]; 
     byte       stack[512];      //任务执行时使用的栈
 } Task;
 

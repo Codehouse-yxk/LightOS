@@ -46,5 +46,7 @@ int SetDescValue(Descriptor* pDesc, uint base, uint limit, ushort attr);
 /* 获取段描述符的值（基址、界限、属性） */
 int GetDescValue(Descriptor* pDesc, uint* pBase, uint* pLimit, ushort* pAttr);
 
+/* 配置页表属性 */
+void ConfigPageTable();
 
 #endif  //KERNEL_H

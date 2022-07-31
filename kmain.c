@@ -40,6 +40,8 @@ void KMain()
 
     IntModInit();
 
+    ConfigPageTable();
+
     LaunchTask();
 
     SetPrintPos(0, 20);

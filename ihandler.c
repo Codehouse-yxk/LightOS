@@ -5,7 +5,27 @@
 #include "interrupt.h"
 #include "ihandler.h"
 #include "task.h"
+#include "screen.h"
 
+extern volatile Task* gCTaskAddr;
+
+void PageFaultHandler()
+{
+    SetPrintPos(0, 8);
+    PrintString("Page Fault, Kill :");
+    PrintString(gCTaskAddr->name);
+
+    KillTask();
+}
+
+void SegmentFaultHandler()
+{
+    SetPrintPos(0, 8);
+    PrintString("Segment Fault, Kill :");
+    PrintString(gCTaskAddr->name);
+
+    KillTask();
+}
 
 void TimerHandler()
 {

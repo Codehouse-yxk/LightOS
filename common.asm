@@ -3,7 +3,7 @@
 BaseOfBoot    equ    0x7C00     ;启动程序加载地址
 BaseOfLoader  equ    0x9000     ;Bootloader加载地址
 BaseOfKernel  equ    0xB000     ;内核加载地址
-BaseOfApp     equ    0xF000    ;App加载地址
+BaseOfApp     equ    0xF000     ;App加载地址
 
 BaseOfSharedMemory  equ 0xA000  ;共享内存起始地址
 
@@ -21,6 +21,10 @@ LoadTaskEntry       equ     BaseOfSharedMemory + 32     ;加载任务函数指�
 ;App
 GetAppToRunEntry    equ     BaseOfSharedMemory + 36
 GetAppNumEntry      equ     BaseOfSharedMemory + 40
+
+
+PageDirBase    equ    0x50000	;页目录基地址
+PageTblBase    equ    0x51000	;页表基地址
 
 
 ; PIC-8259A Ports 
