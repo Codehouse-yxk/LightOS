@@ -12,6 +12,7 @@
 #define MAX_READY_TASK      (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
 #define MAX_TASK_BUFF_NUM   (MAX_TASK_NUM + 1)
 #define PID_BASE            0x10    
+#define MAX_TIME_SLICE      260    //最大时间片
 
 static AppInfo* (*GetAppToRun)(uint index) = NULL;
 static uint (*GetAppNum)() = NULL;
@@ -65,7 +66,7 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     StrCpy(p->name, name, sizeof(p->name)-1);
     p->tmain = entry;
     p->id = id;
-    p->total = 256 - pri;
+    p->total = MAX_TIME_SLICE - pri;
     p->current = 0;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
