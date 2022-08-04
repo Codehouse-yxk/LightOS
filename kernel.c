@@ -1,7 +1,10 @@
-
-/**
- * 内核数据定义等
-*/
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-05 00:20:04
+ * @FilePath: \LightOS\kernel.c
+ * @Description: 内核gdt、idt、page等操作
+ * @Github: https://github.com/Codehouse-yxk
+ */
 
 
 #include "kernel.h"

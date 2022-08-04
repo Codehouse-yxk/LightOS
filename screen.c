@@ -1,7 +1,10 @@
-
-/**
- * 屏幕打印功能
-*/
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-02 14:21:43
+ * @FilePath: \LightOS\screen.c
+ * @Description: 屏幕打印功能
+ * @github: https://github.com/Codehouse-yxk
+ */
 
 #include "screen.h"
 

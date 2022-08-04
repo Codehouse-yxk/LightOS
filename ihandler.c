@@ -1,6 +1,10 @@
-/**
- *  中断子模块，包括中断服务函数定义
-*/
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-13 08:37:12
+ * @FilePath: \LightOS\ihandler.c
+ * @Description: 中断子模块，包括中断服务函数定义
+ * @Github: https://github.com/Codehouse-yxk
+ */
 
 #include "interrupt.h"
 #include "ihandler.h"

@@ -1,3 +1,10 @@
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-06-19 20:26:04
+ * @FilePath: \LightOS\boot.asm
+ * @Description: 引导程序
+ * @Github: https://github.com/Codehouse-yxk
+ */
 
 %include "blfunc.asm"
 %include "common.asm"

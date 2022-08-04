@@ -1,6 +1,9 @@
-
-/**
- *  内核入口（c）
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-06-19 20:26:04
+ * @FilePath: \LightOS\kmain.c
+ * @Description: 内核入口（c）
+ * @Github: https://github.com/Codehouse-yxk
  */
 
 #include "screen.h"

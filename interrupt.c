@@ -1,7 +1,9 @@
-
-
-/**
- *  中断主模块，包含：中断初始化、中断参数设置等
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-13 08:11:02
+ * @FilePath: \LightOS\interrupt.c
+ * @Description: 中断主模块，包含：中断初始化、中断参数设置等
+ * @Github: https://github.com/Codehouse-yxk
  */
 
 #include "interrupt.h"

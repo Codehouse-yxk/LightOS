@@ -1,7 +1,10 @@
-
-/**
- * 双向循环链表
- * */
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-16 15:22:30
+ * @FilePath: \LightOS\list.c
+ * @Description: 双向循环链表
+ * @Github: https://github.com/Codehouse-yxk
+ */
 
 #include "list.h"
 

@@ -1,7 +1,11 @@
-
-/**
- *  应用层任务模块
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-24 10:50:17
+ * @FilePath: \LightOS\app.c
+ * @Description: 应用层任务模块
+ * @Github: https://github.com/Codehouse-yxk
  */
+
 
 #include "app.h"
 #include "type.h"

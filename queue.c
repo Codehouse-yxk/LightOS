@@ -1,6 +1,11 @@
-/**
- *  内核队列
- **/
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-17 12:07:37
+ * @FilePath: \LightOS\queue.c
+ * @Description: 内核队列
+ * @Github: https://github.com/Codehouse-yxk
+ */
+
 #include "queue.h"
 
 void Queue_Init(Queue *queue)

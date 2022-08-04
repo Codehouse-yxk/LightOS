@@ -1,7 +1,11 @@
-
-/**
- * 内核任务模块，包含：任务初始化、任务调度等功能
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-13 08:11:44
+ * @FilePath: \LightOS\task.c
+ * @Description: 内核任务模块，包含：任务初始化、任务调度等功能
+ * @Github: https://github.com/Codehouse-yxk
  */
+
 
 #include "task.h"
 #include "utility.h"

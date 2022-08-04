@@ -1,6 +1,9 @@
-
-/**
- * 通用模块，包含：延迟函数等
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-07-13 08:11:29
+ * @FilePath: \LightOS\utility.c
+ * @Description: 通用模块，包含：延迟函数等
+ * @Github: https://github.com/Codehouse-yxk
  */
 
 #include "utility.h"
