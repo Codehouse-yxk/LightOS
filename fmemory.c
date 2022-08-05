@@ -1,12 +1,12 @@
 /*
  * @Author: yangxingkun
  * @Date: 2022-08-03 22:11:01
- * @FilePath: \LightOS\memory.c
+ * @FilePath: \LightOS\fmemory.c
  * @Description: 定长内存管理
  * @Github: https://github.com/Codehouse-yxk
  */
 
-#include "memory.h"
+#include "fmemory.h"
 #include "utility.h"
 
 //测试

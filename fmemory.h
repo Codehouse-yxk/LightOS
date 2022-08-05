@@ -1,5 +1,12 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-08-05 11:09:12
+ * @FilePath: \LightOS\fmemory.h
+ * @Description: 
+ * @Github: https://github.com/Codehouse-yxk
+ */
+#ifndef FMEMORY_H
+#define FMEMORY_H
 
 #include "type.h"
 
@@ -29,7 +36,7 @@ typedef struct
 
 
 /**
- * @description: 初始化内存管理【从mem中构建管理单元和分配单元】
+ * @description: 初始化内存管理模块【从mem中构建管理单元和分配单元】
  * @param 内存起始地址
  * @param 内存总大小
  * @return 
@@ -58,4 +65,4 @@ void fmem_test();
 
 
 
-#endif // MEMORY_H
+#endif // FMEMORY_H
