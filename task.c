@@ -74,8 +74,8 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->current = 0;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
-    SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, PageDirBase - 1, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
-    SetDescValue(AddrOff(p->ldt, LDT_DATA32_INDEX), 0x00000, PageDirBase - 1, DA_DRW + DA_32 + DA_DPL3); //设置ldt数据段
+    SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, kernalHeapBase - 1, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
+    SetDescValue(AddrOff(p->ldt, LDT_DATA32_INDEX), 0x00000, kernalHeapBase - 1, DA_DRW + DA_32 + DA_DPL3); //设置ldt数据段
 
     p->ldtSelector = GDT_TASK_LDT_SELECTOR;
     p->tssSelector = GDT_TASK_TSS_SELECTOR;
@@ -194,7 +194,7 @@ void TaskModInit()
 {
     int i = 0;
 
-    byte* pStack = (byte*)(PageDirBase - (AppTaskSize * MAX_TASK_BUFF_NUM));
+    byte* pStack = (byte*)(AppHeapBase - (AppTaskSize * MAX_TASK_BUFF_NUM));
 
     for(i = 0; i < MAX_TASK_BUFF_NUM; i++)
     {

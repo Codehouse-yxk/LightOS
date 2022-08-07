@@ -10,6 +10,8 @@
 #include "app.h"
 #include "type.h"
 #include "utility.h"
+#include "screen.h"
+#include "memory.h"
 
 #define MAX_APP_NUM 16
 static AppInfo gAppToRun[MAX_APP_NUM] = {0}; //记录哪些应用程序需要被系统创建任务（进程）来执行
@@ -35,9 +37,9 @@ static void RegApp(const char *name, void (*tmain)(), byte priority)
 void AppMain()
 {
     RegApp("Task A", TaskA, 250);
-    RegApp("Task B", TaskB, 220);
-    RegApp("Task C", TaskC, 220);
-    RegApp("Task D", TaskD, 240);
+    // RegApp("Task B", TaskB, 220);
+    // RegApp("Task C", TaskC, 220);
+    // RegApp("Task D", TaskD, 240);
 }
 
 AppInfo *GetAppToRun(uint index)
@@ -59,22 +61,17 @@ void TaskA()
 {
     int i = 0;
     SetPrintPos(0, 15);
-    PrintString("Task A: ");
-    while (i < 5)
-    {
-        //  强制修改内核内存空间，测试异常
-        // if(i == 2)
-        // {
-        //     uint* p = (uint*)0x50000;
-        //     *p = 10;
-        // }
-        SetPrintPos(10, 15);
-        PrintChar('A' + i);
-        i = (i + 1) % 26;
-        Delay(2);
-    }
-    SetPrintPos(10, 15);
-    PrintString("end Task A");
+    PrintString("Task A: \n");
+    uint* p = NULL;
+
+    p = Malloc(sizeof(uint));
+    *p = 1111;
+    PrintIntHex(p);
+    PrintChar('\n');
+
+    PrintIntDec(*p);
+    Free(p);
+
 }
 
 void TaskB()

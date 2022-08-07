@@ -4,7 +4,13 @@
 
 #define NULL  ((void*)0)
 
-#define PageDirBase  0x50000	//页目录基地址
+#define HeapBase    0x70000
+#define HeapSize    0x20000     //堆空间大小
+
+#define kernalHeapBase HeapBase
+#define AppHeapBase  (HeapBase - HeapSize)
+
+#define PageDirBase  (HeapSize + HeapSize)	//页目录基地址
 #define PageTblBase  (PageDirBase + 0x1000)	//页表基地址
 
 #define AppTaskSize     512

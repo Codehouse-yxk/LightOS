@@ -1,9 +1,9 @@
 #ifndef IHANDLER_H
 #define IHANDLER_H
 
-#define DeclHandler(name) \
-    extern void name##Entry();   \
-    void name()
+#define DeclHandler(name)     \
+        void name##Entry();   \
+        void name()
 
 
 /* 页错误中断入口函数 */

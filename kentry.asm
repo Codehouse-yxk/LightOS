@@ -1,10 +1,9 @@
-/*
- * @Author: yangxingkun
- * @Date: 2022-06-19 20:26:04
- * @FilePath: \LightOS\kentry.asm
- * @Description: 内核入口文件（汇编）
- * @Github: https://github.com/Codehouse-yxk
- */
+
+; @Author: yangxingkun
+; @Date: 2022-06-19 20:26:04
+; @FilePath: \LightOS\kentry.asm
+; @Description: 内核入口文件（汇编）
+; @Github: https://github.com/Codehouse-yxk
 
 %include "common.asm"
 

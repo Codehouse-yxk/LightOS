@@ -8,9 +8,9 @@
 
 #include "vmemory.h"
 //测试
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
+// #include <stdio.h>
+// #include <time.h>
+// #include <stdlib.h>
 
 static List gVMemList = {0};
 
@@ -31,7 +31,6 @@ void* VMemAlloc(uint size)
     VMemHead* ret = NULL;
 
     uint alloc = size + VM_HEAD_SIZE;
-
     List_ForEach(&gVMemList, pos)
     {
         VMemHead* current = (VMemHead*)pos;
@@ -82,73 +81,73 @@ int VMemFree(void* ptr)
 }
 
 
-void vmem_test()
-{
-    static byte vmem[0x10000] = {0};
-    void* array[2000] = {0};
-    ListNode* pos = NULL;
-    int i = 0;
+// void vmem_test()
+// {
+//     static byte vmem[0x10000] = {0};
+//     void* array[2000] = {0};
+//     ListNode* pos = NULL;
+//     int i = 0;
     
-    srand((unsigned)time(NULL));
+//     srand((unsigned)time(NULL));
     
-    VMemInit(vmem, sizeof(vmem));
+//     VMemInit(vmem, sizeof(vmem));
     
-    List_ForEach(&gVMemList, pos)
-    {
-        VMemHead* current = (VMemHead*)pos;
+//     List_ForEach(&gVMemList, pos)
+//     {
+//         VMemHead* current = (VMemHead*)pos;
         
-        printf("i = %d\n", i++);
-        printf("used: %d\n", current->used);
-        printf("free: %d\n", current->free);
-        printf("\n");
-    }
+//         printf("i = %d\n", i++);
+//         printf("used: %d\n", current->used);
+//         printf("free: %d\n", current->free);
+//         printf("\n");
+//     }
     
-    printf("Alloc Test:\n");
+//     printf("Alloc Test:\n");
     
-    i = 0;
+//     i = 0;
     
-    for(i=0; i<100000; i++)
-    {
-        int ii = i % 2000;
-        byte* p = VMemAlloc(1 + rand() % 400);
+//     for(i=0; i<100000; i++)
+//     {
+//         int ii = i % 2000;
+//         byte* p = VMemAlloc(1 + rand() % 400);
         
-        if( array[ii] )
-        {
-            VMemFree(array[ii]);
+//         if( array[ii] )
+//         {
+//             VMemFree(array[ii]);
             
-            array[ii] = NULL; 
-        }
+//             array[ii] = NULL; 
+//         }
         
-        array[ii] = p;
+//         array[ii] = p;
         
-        if( i % 3 == 0 )
-        {
-            int index = rand() % 2000;
+//         if( i % 3 == 0 )
+//         {
+//             int index = rand() % 2000;
             
-            VMemFree(array[index]);
+//             VMemFree(array[index]);
             
-            array[index] = NULL;
-        }
-    }
+//             array[index] = NULL;
+//         }
+//     }
     
-    printf("\n");
+//     printf("\n");
     
-    printf("Free Test:\n");
+//     printf("Free Test:\n");
     
-    for(i=0; i<2000; i++)
-    {
-        VMemFree(array[i]);
-    }
+//     for(i=0; i<2000; i++)
+//     {
+//         VMemFree(array[i]);
+//     }
     
-    i = 0;
+//     i = 0;
     
-    List_ForEach(&gVMemList, pos)
-    {
-        VMemHead* current = (VMemHead*)pos;
+//     List_ForEach(&gVMemList, pos)
+//     {
+//         VMemHead* current = (VMemHead*)pos;
         
-        printf("i = %d\n", i++);
-        printf("used: %d\n", current->used);
-        printf("free: %d\n", current->free);
-        printf("\n");
-    }
-}
+//         printf("i = %d\n", i++);
+//         printf("used: %d\n", current->used);
+//         printf("free: %d\n", current->free);
+//         printf("\n");
+//     }
+// }

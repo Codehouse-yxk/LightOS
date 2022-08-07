@@ -9,6 +9,7 @@
 #include "screen.h"
 #include "task.h"
 #include "interrupt.h"
+#include "memory.h"
 
 /**
  * 内核入口函数
@@ -36,6 +37,8 @@ void KMain()
     PrintString("Idt Size: ");
     PrintIntDec(gIdtInfo.size);
     PrintChar('\n');
+
+    MemModInit((byte*)kernalHeapBase, HeapSize);
 
     AppModInit();
 

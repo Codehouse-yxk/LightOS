@@ -10,9 +10,9 @@
 #include "utility.h"
 
 //测试
-#include <stdio.h>
-#include <time.h>
-#include <stdlib.h>
+// #include <stdio.h>
+// #include <time.h>
+// #include <stdlib.h>
 
 static FMemList gFMemList = {0};
 
@@ -20,8 +20,7 @@ void FMemInit(byte* mem, uint size)
 {
     
     int i = 0;
-    uint max = 0;
-    max = size / (FM_NODE_SIZE + FM_ALLOC_SIZE);
+    uint max = size / (FM_NODE_SIZE + FM_ALLOC_SIZE);
 
     gFMemList.max = max;
     gFMemList.nbase = (FMemNode*)mem;
@@ -57,7 +56,6 @@ void* FMemAlloc()
 
         alloc->ptr = ret;   //做标记，用于回收内存
     }
-
     return ret;
 }
 
@@ -67,10 +65,8 @@ int FMemFree(void* ptr)
 
     if( ptr )
     {
-        uint index = AddrIndex((FMemUnit*)ptr, gFMemList.ubase);       //根据需要释放的分配单元得到偏移
-
+        uint index = AddrIndex((FMemUnit*)ptr, gFMemList.ubase);  //根据需要释放的分配单元得到偏移
         FMemNode* node = AddrOff(gFMemList.nbase, index);   //根据偏移得到分配单元对应的管理单元
-
         if((index < gFMemList.max) && isEqual(ptr, node->ptr))  
         {
             node->next = gFMemList.node;    //将内存归还到链表头部
@@ -82,64 +78,64 @@ int FMemFree(void* ptr)
     return ret;
 }
 
-void fmem_test()
-{
-    static byte fmem[0x10000] = {0};
-    static void* array[2000] = {0};
-    int i = 0;
+// void fmem_test()
+// {
+//     static byte fmem[0x10000] = {0};
+//     static void* array[2000] = {0};
+//     int i = 0;
     
-    FMemNode* pos = NULL;
+//     FMemNode* pos = NULL;
     
-    FMemInit(fmem, sizeof(fmem));
+//     FMemInit(fmem, sizeof(fmem));
     
-    pos = gFMemList.node;
+//     pos = gFMemList.node;
     
-    while( pos )
-    {
-        i++;
-        pos = pos->next;
-    }
+//     while( pos )
+//     {
+//         i++;
+//         pos = pos->next;
+//     }
     
-    printf("i = %d\n", i++);
+//     printf("i = %d\n", i++);
     
-    for(i=0; i<100000; i++)
-    {
-        int ii = i % 2000;
-        byte* p = FMemAlloc();
+//     for(i=0; i<100000; i++)
+//     {
+//         int ii = i % 2000;
+//         byte* p = FMemAlloc();
         
-        if( array[ii] )
-        {
-            FMemFree(array[ii]);
+//         if( array[ii] )
+//         {
+//             FMemFree(array[ii]);
             
-            array[ii] = NULL; 
-        }
+//             array[ii] = NULL; 
+//         }
         
-        array[ii] = p;
+//         array[ii] = p;
         
-        if( i % 3 == 0 )
-        {
-            int index = rand() % 2000;
+//         if( i % 3 == 0 )
+//         {
+//             int index = rand() % 2000;
             
-            FMemFree(array[index]);
+//             FMemFree(array[index]);
             
-            array[index] = NULL;
-        }
-    }
+//             array[index] = NULL;
+//         }
+//     }
     
-    for(i=0; i<2000; i++)
-    {
-        FMemFree(array[i]);
-    }
+//     for(i=0; i<2000; i++)
+//     {
+//         FMemFree(array[i]);
+//     }
     
-    i = 0;
+//     i = 0;
     
-    pos = gFMemList.node;
+//     pos = gFMemList.node;
     
-    while( pos )
-    {
-        i++;
-        pos = pos->next;
-    }
+//     while( pos )
+//     {
+//         i++;
+//         pos = pos->next;
+//     }
     
-    printf("i = %d\n", i++);
-}
+//     printf("i = %d\n", i++);
+// }

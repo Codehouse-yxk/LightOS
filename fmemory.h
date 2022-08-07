@@ -10,8 +10,7 @@
 
 #include "type.h"
 
-
-#define AddrIndex(a, b) (((uint)(a) - (uint)(b)) / sizeof(*a))      //计算a地址相对于b地址的偏移
+#define AddrIndex(a, b) (((uint)(a) - (uint)(b)) / sizeof(*(a)))      //计算a地址相对于b地址的偏移
 
 #define FM_ALLOC_SIZE   32                 //一个内存分配单元大小
 #define FM_NODE_SIZE    sizeof(FMemNode)   //一个管理单元节点大小

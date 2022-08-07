@@ -42,6 +42,6 @@ int VMemFree(void* ptr);
 /**
  * @description 测试定长内存
  */
-void vmem_test();
+// void vmem_test();
 
 #endif //VMEMORY_H

@@ -1,4 +1,11 @@
 
+; @Author: yangxingkun
+; @Date: 2022-08-05 23:45:16
+; @FilePath: \LightOS\common.asm
+; @Description: 数据定义
+; @Github: https://github.com/Codehouse-yxk
+
+
 ;Global Variable
 BaseOfBoot    equ    0x7C00     ;启动程序加载地址
 BaseOfLoader  equ    0x9000     ;Bootloader加载地址
@@ -23,7 +30,13 @@ GetAppToRunEntry    equ     BaseOfSharedMemory + 36
 GetAppNumEntry      equ     BaseOfSharedMemory + 40
 
 
-PageDirBase    equ    0x50000	;页目录基地址
+HeapBase       equ    0x70000
+HeapSize       equ    0x20000               ;堆空间大小
+
+kernalHeapBase equ    HeapBase              ;内核堆空间起始地址
+AppHeapBase    equ    HeapBase - HeapSize   ;应用程序对空间起始地址
+
+PageDirBase    equ    HeapBase + HeapSize	;页目录基地址
 PageTblBase    equ    PageDirBase + 0x1000	;页表基地址
 
 

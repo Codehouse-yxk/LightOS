@@ -1,10 +1,9 @@
-/*
- * @Author: yangxingkun
- * @Date: 2022-06-19 20:26:04
- * @FilePath: \LightOS\loader.asm
- * @Description: 跳转保护模式、加载内核
- * @Github: https://github.com/Codehouse-yxk
- */
+
+; @Author: yangxingkun
+; @Date: 2022-06-19 20:26:04
+; @FilePath: \LightOS\loader.asm
+; @Description: 跳转保护模式、加载内核
+; @Github: https://github.com/Codehouse-yxk
 
 %include "blfunc.asm"
 %include "common.asm"
