@@ -49,7 +49,7 @@ static void TaskEntry()
 
     //触发0x80软中断，陷入内核态销毁任务
     asm volatile(
-        "movw $0, %ax \n"
+        "movl $0, %eax \n"   //type:销毁任务
         "int $0x80 \n"
     );
 }

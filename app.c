@@ -12,6 +12,7 @@
 #include "utility.h"
 #include "screen.h"
 #include "memory.h"
+#include "syscall.h"
 
 #define MAX_APP_NUM 16
 static AppInfo gAppToRun[MAX_APP_NUM] = {0}; //记录哪些应用程序需要被系统创建任务（进程）来执行
@@ -62,15 +63,18 @@ void TaskA()
     int i = 0;
     SetPrintPos(0, 15);
     PrintString("Task A: \n");
-    uint* p = NULL;
 
-    p = Malloc(sizeof(uint));
-    *p = 1111;
-    PrintIntHex(p);
+    uint mutex = CreateMutex();
+
+    PrintString("ret : ");
+    PrintIntHex((uint)mutex);
     PrintChar('\n');
 
-    PrintIntDec(*p);
-    Free(p);
+    EnterCritical(mutex);
+
+    ExitCritical(mutex);
+
+    DestroyMutex(mutex);
 
 }
 

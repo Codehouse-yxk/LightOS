@@ -155,9 +155,15 @@ TimerHandlerEntry:
 
 SysCallHandlerEntry:
     BeginISR
-    push ax
+    push edx
+    push ecx
+    push ebx
+    push eax
     call SysCallHandler
-    pop ax
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
     EndISR
     
 

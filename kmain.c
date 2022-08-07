@@ -10,6 +10,7 @@
 #include "task.h"
 #include "interrupt.h"
 #include "memory.h"
+#include "mutex.h"
 
 /**
  * 内核入口函数
@@ -39,6 +40,8 @@ void KMain()
     PrintChar('\n');
 
     MemModInit((byte*)kernalHeapBase, HeapSize);
+
+    MutexModInit();
 
     AppModInit();
 

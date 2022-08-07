@@ -10,6 +10,7 @@
 #include "ihandler.h"
 #include "task.h"
 #include "screen.h"
+#include "mutex.h"
 
 extern volatile Task* gCTaskAddr;
 
@@ -17,7 +18,7 @@ void PageFaultHandler()
 {
     SetPrintPos(0, 8);
     PrintString("Page Fault, Kill :");
-    PrintString(gCTaskAddr->name);
+    PrintString((const char*)gCTaskAddr->name);
 
     KillTask();
 }
@@ -26,7 +27,7 @@ void SegmentFaultHandler()
 {
     SetPrintPos(0, 8);
     PrintString("Segment Fault, Kill :");
-    PrintString(gCTaskAddr->name);
+    PrintString((const char*)gCTaskAddr->name);
 
     KillTask();
 }
@@ -44,10 +45,17 @@ void TimerHandler()
     SendEOI(MASTER_EOI_PORT);
 }
 
-void SysCallHandler(ushort ax)
+void SysCallHandler(uint type, uint cmd, uint param1, uint param2)
 {
-    if(ax == 0)
+    switch (type)
     {
-        KillTask();
+        case 0:
+            KillTask();
+            break;
+        case 1:
+            MutexCallHandler(cmd, param1);
+            break;
+        default:
+            break;
     }
 }
