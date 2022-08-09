@@ -3,6 +3,20 @@
 
 #include "type.h"
 
+
+#define SysCall(type, cmd, param1, param2)  \
+        asm volatile(                       \
+            "movl $" #type ",   %%eax \n"   \
+            "movl $" #cmd ",    %%ebx \n"   \
+            "movl %0,           %%ecx \n"   \
+            "movl %1,           %%edx \n"   \
+            "int  $0x80               \n"   \
+            :                               \
+            : "r"(param1), "r"(param2)      \
+            : "eax", "ebx", "ecx", "edx"    \
+        )
+
+
 /**
  * @description: 结束任务
  */
@@ -29,8 +43,9 @@ void ExitCritical(uint mutex);
 /**
  * @description: 销毁互斥锁
  * @param 互斥锁ID
+ * @return 销毁成功：1，销毁失败：0
  */
-void DestroyMutex(uint mutex);
+uint DestroyMutex(uint mutex);
 
 
 #endif //SYSCALL_H

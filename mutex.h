@@ -18,9 +18,10 @@ void MutexModInit();
 /**
  * @description: 互斥锁系统调用处理函数
  * @param 互斥锁操作指令
- * @param 参数
+ * @param 参数1
+ * @param 参数2
  */
-void MutexCallHandler(uint cmd, uint param);
+void MutexCallHandler(uint cmd, uint param1, uint param2);
 
 /**
  * @description: 创建互斥锁（内核）
@@ -31,14 +32,16 @@ Mutex* SysCreateMutex();
 /**
  * @description: 销毁互斥锁（内核）
  * @param 互斥锁ID
+ * @return 销毁成功：1，销毁失败：0
  */
-void SysDestroyMutex(Mutex* mutex);
+uint SysDestroyMutex(Mutex* mutex);
 
 /**
  * @description: 进入临界区（内核）
  * @param 互斥锁ID
+ * @param 等待标志(需要传回用户层)
  */
-void SysEnterCritical(Mutex* mutex);
+void SysEnterCritical(Mutex* mutex, uint* wait);
 
 /**
  * @description: 退出临界区（内核）

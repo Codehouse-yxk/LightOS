@@ -11,6 +11,9 @@
 #include "memory.h"
 #include "task.h"
 
+
+extern volatile Task* gCTaskAddr;
+
 static List gMList = {0};
 
 void MutexModInit()
@@ -18,13 +21,13 @@ void MutexModInit()
     List_Init(&gMList);
 }
 
-void MutexCallHandler(uint cmd, uint param)
+void MutexCallHandler(uint cmd, uint param1, uint param2)
 {
     switch (cmd)
     {
         case 0:
         {
-            uint* pRet = (uint*)param;
+            uint* pRet = (uint*)param1;
             *pRet = (uint)SysCreateMutex();            //将地址作为mutex的ID返回给应用
             PrintString("mutex create id :");
             PrintIntHex(*pRet);
@@ -33,17 +36,19 @@ void MutexCallHandler(uint cmd, uint param)
         }
         case 1:
         {
-            SysEnterCritical((Mutex*)param);
+            uint* pRet = (uint*)param2;
+            SysEnterCritical((Mutex*)param1, pRet);
             break;
         }
         case 2:
         {
-            SysExitCritical((Mutex*)param);
+            SysExitCritical((Mutex*)param1);
             break;
         }
         case 3:
         {
-            SysDestroyMutex((Mutex*)param);
+            uint* pRet = (uint*)param2;
+            *pRet = SysDestroyMutex((Mutex*)param1);
             break;
         }
         default:
@@ -86,40 +91,55 @@ static uint IsMutexValid(Mutex* mutex)
     return ret;
 }
 
-void SysDestroyMutex(Mutex* mutex)
+uint SysDestroyMutex(Mutex* mutex)
 {
+    uint ret = 0;
     if(mutex)
     {
         ListNode* pos = NULL;
 
         List_ForEach(&gMList, pos)
         {
-            if(isEqual(pos, mutex))
+            if(isEqual(pos, mutex) && isEqual(mutex->lock, 0))
             {
                 PrintString("destroy mutex :");
                 PrintIntHex((uint)mutex);
                 PrintChar('\n');
                 List_DelNode(pos);
                 Free(pos);
+                ret = 1;
                 break;
             }
         }
     }
+    return ret;
 }
 
-void SysEnterCritical(Mutex* mutex)
+void SysEnterCritical(Mutex* mutex, uint* wait)
 {
     if(mutex && IsMutexValid(mutex))
     {
         if(mutex->lock)
         {
-            PrintString("wait to get mutex, move task to waitting queue !\n");
-            MtxSchedule(WAIT);
+            if(isEqual(mutex->lock, gCTaskAddr))
+            {
+                PrintString("the same task get mutex again!\n");
+                *wait = 0;  //同一任务重复加锁，直接返回继续执行
+            }
+            else
+            {
+                PrintString("wait to get mutex, move task to waitting queue !\n");
+                *wait = 1;          //传给用户，当阻塞的任务重新被执行时，用户层再次进行mutex检测
+                MtxSchedule(WAIT);
+            }
         }
         else
         {
-            mutex->lock = 1;
-            PrintString("get mutex, enter critical !\n");
+            mutex->lock = (uint)gCTaskAddr;
+            *wait = 0;
+            PrintString("get mutex, enter critical !   ");
+            PrintIntHex((uint)mutex->lock);
+            PrintChar('\n');
         }
     }
 }
@@ -128,11 +148,22 @@ void SysExitCritical(Mutex* mutex)
 {
     if(mutex && IsMutexValid(mutex))
     {
-        if(mutex->lock == 1)
+        if(isEqual(mutex->lock, gCTaskAddr))
         {
             mutex->lock = 0;
             PrintString("current task exit critical !\n");
             MtxSchedule(NOTIFY);
+        }
+        else    //非申请锁的任务操作锁，直接杀掉
+        {
+            PrintString("Task: "); 
+            PrintIntHex((uint)gCTaskAddr);
+            PrintString("  ");
+            PrintIntHex((uint)mutex->lock);
+            PrintString("  ");
+            PrintString(gCTaskAddr->name);
+            PrintString("   OOPS\n");
+            KillTask();
         }
     }
 }

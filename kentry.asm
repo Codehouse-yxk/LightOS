@@ -43,9 +43,9 @@ extern LoadTask
     push gs		;p(实时)->rv.gs --> p(任务)->rv.gs
 
     ;中断后，ds es使用的段选择子和ss一致，均为 GDT_DATA32_FLAT_SELECTOR
-    mov dx, ss
-    mov ds, dx
-    mov es, dx
+    mov si, ss
+    mov ds, si
+    mov es, si
 
     mov esp, BaseOfLoader   ;esp指向内核栈
 %endmacro
@@ -66,9 +66,9 @@ extern LoadTask
     push gs		;p(实时)->rv.gs --> p(任务)->rv.gs
 
     ;中断后，ds es使用的段选择子和ss一致，均为 GDT_DATA32_FLAT_SELECTOR
-    mov dx, ss
-    mov ds, dx
-    mov es, dx
+    mov si, ss
+    mov ds, si
+    mov es, si
 
     mov esp, BaseOfLoader   ;esp指向内核栈
 %endmacro

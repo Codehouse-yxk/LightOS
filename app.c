@@ -71,18 +71,24 @@ void TaskA()
 
     EnterCritical(mutex);
 
-    for(i=0; i<50; i++)
+    for(i=0; i<30; i++)
     {
         SetPrintPos(12, 15);
         PrintIntDec(num);
         num++;
-        Delay(5);
+        Delay(2);
     }
 
     ExitCritical(mutex);
 
-    //DestroyMutex(mutex);
-
+    uint ret = DestroyMutex(mutex);
+    if(ret)
+    {
+        PrintString("   destroy mutex success\n");
+    }else
+    {
+        PrintString("   destroy mutex fail\n");
+    }
 }
 
 void TaskB()
@@ -90,15 +96,27 @@ void TaskB()
     int i = 0;
     SetPrintPos(0, 16);
     PrintString("Task B: ");
-    EnterCritical(mutex);
-    while (1)
-    {
-        SetPrintPos(12, 16);
-        PrintIntDec(num);
-        num+=2;
-        Delay(5);
-    }
+
     ExitCritical(mutex);
+
+    uint ret = DestroyMutex(mutex);
+    if(ret)
+    {
+        PrintString("   destroy mutex success\n");
+    }else
+    {
+        PrintString("   destroy mutex fail\n");
+    }
+
+    // EnterCritical(mutex);
+    // while (1)
+    // {
+    //     SetPrintPos(12, 16);
+    //     PrintIntDec(num);
+    //     num+=2;
+    //     Delay(5);
+    // }
+    // ExitCritical(mutex);
 }
 
 void TaskC()
