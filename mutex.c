@@ -9,6 +9,7 @@
 #include "mutex.h"
 #include "screen.h"
 #include "memory.h"
+#include "task.h"
 
 static List gMList = {0};
 
@@ -113,6 +114,7 @@ void SysEnterCritical(Mutex* mutex)
         if(mutex->lock)
         {
             PrintString("wait to get mutex, move task to waitting queue !\n");
+            MtxSchedule(WAIT);
         }
         else
         {
@@ -130,6 +132,7 @@ void SysExitCritical(Mutex* mutex)
         {
             mutex->lock = 0;
             PrintString("current task exit critical !\n");
+            MtxSchedule(NOTIFY);
         }
     }
 }

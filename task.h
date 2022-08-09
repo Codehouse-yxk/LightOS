@@ -64,6 +64,11 @@ typedef struct
     Task task;
 } TaskNode;
 
+enum{
+    NOTIFY,
+    WAIT
+};
+
 
 /* 汇编中定义的RunTask，通过共享内存获取函数指针 */
 void (*const RunTask)(volatile Task* p);
@@ -79,6 +84,9 @@ void LaunchTask();
 
 /* 任务调度 */
 void Schedule();
+
+/* 互斥锁调度 */
+void MtxSchedule(uint action);
 
 /* 任务销毁 */
 void KillTask();

@@ -175,6 +175,32 @@ static void RunningToReady()
     }
 }
 
+static void RunningToWaitting()
+{
+    if(Queue_Length(&gRunningTask) > 0)
+    {
+        TaskNode* tn = (TaskNode*)Queue_Front(&gRunningTask);
+
+        if(!isEqual(tn, (QueueNode*)&gIdleTask))
+        {
+            Queue_Remove(&gRunningTask);
+            Queue_Add(&gWaittingTask, (QueueNode*)tn);
+        }
+    }
+}
+
+static void WaittingToReady()
+{
+    if(Queue_Length(&gWaittingTask) > 0)
+    {
+        TaskNode* tn = (TaskNode*)Queue_Front(&gWaittingTask);
+
+        Queue_Remove(&gWaittingTask);
+
+        Queue_Add(&gReadyTask, (QueueNode*)tn);
+    }
+}
+
 void IdleTask()
 {
     while(1);
@@ -248,6 +274,32 @@ void Schedule()
         gCTaskAddr = &Queue_Node(node, TaskNode, head)->task;
         PrepareForRun(gCTaskAddr);
         LoadTask(gCTaskAddr); //只加载任务的ldt
+    }
+}
+
+void MtxSchedule(uint action)
+{
+    if(action == NOTIFY)
+    {
+        WaittingToReady();
+    }
+    else if(action == WAIT) //当前任务进入阻塞态，并调度下一个任务
+    {
+        RunningToWaitting();   //判断运行态的任务是否需要切换到阻塞态
+
+        ReadyToRunning();   //就绪态任务切换到运行态
+
+        CheckRunningTask();
+
+        Queue_Rotate(&gRunningTask);
+
+        QueueNode *node = Queue_Front(&gRunningTask);
+        if (node)
+        {
+            gCTaskAddr = &Queue_Node(node, TaskNode, head)->task;
+            PrepareForRun(gCTaskAddr);
+            LoadTask(gCTaskAddr); //只加载任务的ldt
+        }
     }
 }
 

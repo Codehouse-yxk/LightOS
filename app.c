@@ -38,7 +38,7 @@ static void RegApp(const char *name, void (*tmain)(), byte priority)
 void AppMain()
 {
     RegApp("Task A", TaskA, 250);
-    // RegApp("Task B", TaskB, 220);
+    RegApp("Task B", TaskB, 220);
     // RegApp("Task C", TaskC, 220);
     // RegApp("Task D", TaskD, 240);
 }
@@ -58,23 +58,30 @@ uint GetAppNum()
     return gAppNum;
 }
 
+static uint mutex = 0;
+static int num = 0;
+
 void TaskA()
 {
     int i = 0;
     SetPrintPos(0, 15);
-    PrintString("Task A: \n");
+    PrintString("Task A: ");
 
-    uint mutex = CreateMutex();
-
-    PrintString("ret : ");
-    PrintIntHex((uint)mutex);
-    PrintChar('\n');
+    mutex = CreateMutex();
 
     EnterCritical(mutex);
 
+    for(i=0; i<50; i++)
+    {
+        SetPrintPos(12, 15);
+        PrintIntDec(num);
+        num++;
+        Delay(5);
+    }
+
     ExitCritical(mutex);
 
-    DestroyMutex(mutex);
+    //DestroyMutex(mutex);
 
 }
 
@@ -83,13 +90,15 @@ void TaskB()
     int i = 0;
     SetPrintPos(0, 16);
     PrintString("Task B: ");
+    EnterCritical(mutex);
     while (1)
     {
-        SetPrintPos(10, 16);
-        PrintChar('a' + i);
-        i = (i + 1) % 10;
-        Delay(2);
+        SetPrintPos(12, 16);
+        PrintIntDec(num);
+        num+=2;
+        Delay(5);
     }
+    ExitCritical(mutex);
 }
 
 void TaskC()
