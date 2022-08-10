@@ -19,7 +19,7 @@ void Exit()
     SysCall(0, 0, 0, 0);
 }
 
-uint CreateMutex()
+uint CreateMutex(uint type)
 {
     volatile uint ret = 0;
     // asm volatile(
@@ -31,7 +31,7 @@ uint CreateMutex()
     //     : "r"(&ret)           //输入参数ret
     //     : "eax", "ebx", "ecx", "edx"
     // );
-    SysCall(1, 0, &ret, 0);
+    SysCall(1, 0, &ret, type);
     
     return ret;
 }

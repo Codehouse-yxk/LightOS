@@ -7,8 +7,14 @@
 typedef struct
 {
     ListNode head;
+    uint type;
     uint lock;
 } Mutex;
+
+enum{
+    NORMAL,     //普通互斥锁
+    STRICT      //严格互斥锁
+};
 
 /**
  * @description: 互斥锁模块初始化
@@ -27,7 +33,7 @@ void MutexCallHandler(uint cmd, uint param1, uint param2);
  * @description: 创建互斥锁（内核）
  * @return 互斥锁ID
  */
-Mutex* SysCreateMutex();
+Mutex* SysCreateMutex(uint type);
 
 /**
  * @description: 销毁互斥锁（内核）

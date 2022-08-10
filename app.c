@@ -67,7 +67,7 @@ void TaskA()
     SetPrintPos(0, 15);
     PrintString("Task A: ");
 
-    mutex = CreateMutex();
+    mutex = CreateMutex(STRICT);
 
     EnterCritical(mutex);
 

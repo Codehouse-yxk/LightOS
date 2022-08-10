@@ -16,6 +16,11 @@
             : "eax", "ebx", "ecx", "edx"    \
         )
 
+enum{
+    NORMAL,     //普通互斥锁
+    STRICT      //严格互斥锁
+};
+
 
 /**
  * @description: 结束任务
@@ -24,9 +29,10 @@ void Exit();
 
 /**
  * @description: 创建互斥锁
+ * @param: 互斥锁类型
  * @return 互斥锁ID
  */
-uint CreateMutex();
+uint CreateMutex(uint type);
 
 /**
  * @description: 进入临界区
