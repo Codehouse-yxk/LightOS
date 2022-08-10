@@ -23,6 +23,7 @@ APP_SRC :=	screen.c 	\
 			vmemory.c 	\
 			memory.c    \
 			syscall.c	\
+			consumer_model.c\
 			app.c
 
 KERNEL_ADDR := B000
