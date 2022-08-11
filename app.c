@@ -14,6 +14,7 @@
 #include "memory.h"
 #include "syscall.h"
 #include "consumer_model.h"
+#include "rw_model.h"
 
 #define MAX_APP_NUM 16
 static AppInfo gAppToRun[MAX_APP_NUM] = {0}; //记录哪些应用程序需要被系统创建任务（进程）来执行
@@ -38,10 +39,10 @@ static void RegApp(const char *name, void (*tmain)(), byte priority)
 
 void AppMain()
 {
-    RegApp("Producer A", ProducerA, 50);
-    RegApp("Producer B", ProducerB, 100);
-    RegApp("Consumer A", ConsumerA, 100);
-    RegApp("Consumer B", ConsumerB, 50);
+    RegApp("Writer", Writer, 255);
+    RegApp("Reader 1", Reader, 255);
+    RegApp("Reader 2", Reader, 255);
+    RegApp("Reader 3", Reader, 255);
 }
 
 AppInfo *GetAppToRun(uint index)
