@@ -30,7 +30,7 @@ void Writer()
         
         ExitCritical(gWriteMutex);
 
-        Delay(5);
+        Delay(2);
     }
     stopFlag = 1;
     SetPrintPos(0, 21);
@@ -39,8 +39,8 @@ void Writer()
 
 void Reader()
 {
-    volatile int cnt = 0;
-    volatile int hFlag = 0;
+    static int cnt = 0;
+    static int hFlag = 0;
     SetPrintPos(0, 18);
     PrintString("Reader: ");
 
