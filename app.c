@@ -39,10 +39,10 @@ static void RegApp(const char *name, void (*tmain)(), byte priority)
 
 void AppMain()
 {
-    RegApp("Writer", Writer, 255);
-    RegApp("Reader 1", Reader, 255);
-    RegApp("Reader 2", Reader, 255);
-    RegApp("Reader 3", Reader, 255);
+    RegApp("Task A", TaskA, 255);
+    RegApp("Task B", TaskB, 255);
+    RegApp("Task C", TaskC, 255);
+    // RegApp("Reader 3", Reader, 255);
 }
 
 AppInfo *GetAppToRun(uint index)
@@ -65,74 +65,44 @@ static int num = 0;
 
 void TaskA()
 {
-    int i = 0;
+    int i = 10;
     SetPrintPos(0, 15);
-    PrintString("Task A: ");
-
-    mutex = CreateMutex(STRICT);
-
-    EnterCritical(mutex);
-
-    for(i=0; i<30; i++)
+    PrintString("Task A: Running");
+    while (i>0)
     {
-        SetPrintPos(12, 15);
-        PrintIntDec(num);
-        num++;
-        Delay(2);
+        i--;
+        Delay(1);
     }
-
-    ExitCritical(mutex);
-
-    uint ret = DestroyMutex(mutex);
-    if(ret)
-    {
-        PrintString("   destroy mutex success\n");
-    }else
-    {
-        PrintString("   destroy mutex fail\n");
-    }
+    SetPrintPos(0, 15);
+    PrintString("Task A: Exit");
 }
 
 void TaskB()
 {
-    int i = 0;
+    int i = 20;
     SetPrintPos(0, 16);
-    PrintString("Task B: ");
-
-    ExitCritical(mutex);
-
-    uint ret = DestroyMutex(mutex);
-    if(ret)
+    PrintString("Task B: Running");
+    while (i>0)
     {
-        PrintString("   destroy mutex success\n");
-    }else
-    {
-        PrintString("   destroy mutex fail\n");
+        i--;
+        Delay(2);
     }
-
-    // EnterCritical(mutex);
-    // while (1)
-    // {
-    //     SetPrintPos(12, 16);
-    //     PrintIntDec(num);
-    //     num+=2;
-    //     Delay(5);
-    // }
-    // ExitCritical(mutex);
+    SetPrintPos(0, 16);
+    PrintString("Task B: Exit");
 }
 
 void TaskC()
 {
     int i = 0;
     SetPrintPos(0, 17);
-    PrintString("Task C: ");
-    while (1)
-    {
-        SetPrintPos(10, 17);
-        PrintChar('m' + i);
-        i = (i + 1) % 10;
-        Delay(2);
-    }
+    PrintString("Task C: Waitting A Over");
+    Wait("Task A");
+    SetPrintPos(0, 17);
+    PrintString("Task C: Waitting B Over");
+    Wait("Task B");
+    Delay(10);
+    SetPrintPos(0, 18);
+    PrintString("Task C: Exit");
 }
 
 void TaskD()

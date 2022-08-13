@@ -19,6 +19,14 @@ void Exit()
     SysCall(0, 0, 0, 0);
 }
 
+void Wait(const char* name)
+{
+    if(name)
+    {
+        SysCall(0, 1, name, 0);
+    }
+}
+
 uint CreateMutex(uint type)
 {
     volatile uint ret = 0;

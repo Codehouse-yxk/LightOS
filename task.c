@@ -68,6 +68,7 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->rv.eflags = 0x3202; //设置IOPL = 3（可以进行IO操作）， IF = 1（响应外部中断）；
 
     StrCpy(p->name, name, sizeof(p->name)-1);
+    Queue_Init(&p->wait);
     p->tmain = entry;
     p->id = id;
     p->total = MAX_TIME_SLICE - pri;
@@ -79,6 +80,31 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
 
     p->ldtSelector = GDT_TASK_LDT_SELECTOR;
     p->tssSelector = GDT_TASK_TSS_SELECTOR;
+}
+
+/**
+ * @description: 根据任务名称查找目标任务
+ * @param 目标任务名
+ * @return 返回目标任务的地址
+ */
+static Task* FindTaskByName(const char* name)
+{
+    Task* ret = NULL;
+    
+    if(!StrCmp(name, "IdleTask", -1))
+    {
+        int i = 0;
+        for(i=0; i<MAX_TASK_NUM; i++)
+        {
+            Task* tmp = &((TaskNode*)AddrOff(gTaskBuffer, i))->task;
+            if(tmp->id && StrCmp(tmp->name, name, -1))
+            {
+                ret = tmp;
+                break;
+            }
+        }
+    }
+    return ret;
 }
 
 static void PrepareForRun(volatile Task *p)
@@ -175,7 +201,7 @@ static void RunningToReady()
     }
 }
 
-static void RunningToWaitting()
+static void RunningToWaitting(Queue* wait)
 {
     if(Queue_Length(&gRunningTask) > 0)
     {
@@ -184,18 +210,18 @@ static void RunningToWaitting()
         if(!isEqual(tn, (QueueNode*)&gIdleTask))
         {
             Queue_Remove(&gRunningTask);
-            Queue_Add(&gWaittingTask, (QueueNode*)tn);
+            Queue_Add(wait, (QueueNode*)tn);
         }
     }
 }
 
-static void WaittingToReady()
+static void WaittingToReady(Queue* wait)
 {
-    if(Queue_Length(&gWaittingTask) > 0)
+    if(Queue_Length(wait) > 0)
     {
-        TaskNode* tn = (TaskNode*)Queue_Front(&gWaittingTask);
+        TaskNode* tn = (TaskNode*)Queue_Front(wait);
 
-        Queue_Remove(&gWaittingTask);
+        Queue_Remove(wait);
 
         Queue_Add(&gReadyTask, (QueueNode*)tn);
     }
@@ -214,6 +240,21 @@ void IdleTask()
     //     i = (i + 1) % 10;
     //     Delay(1);
     // }
+}
+
+void TaskCallHandler( uint cmd, uint param1, uint param2)
+{
+    switch(cmd)
+    {
+        case KILLCMD:
+            KillTask();
+            break;
+        case WAITCMD:
+            WaitTask((const char*)param1);
+            break;
+        default:
+            break;
+    }
 }
 
 void TaskModInit()
@@ -258,10 +299,8 @@ void LaunchTask()
     RunTask(gCTaskAddr); //启动第一个任务
 }
 
-void Schedule()
+static void ScheduleNext()
 {
-    RunningToReady();   //判断运行态的任务是否需要切换到就绪态
-
     ReadyToRunning();   //就绪态任务切换到运行态
 
     CheckRunningTask();
@@ -277,35 +316,45 @@ void Schedule()
     }
 }
 
+void Schedule()
+{
+    RunningToReady();   //判断运行态的任务是否需要切换到就绪态
+    ScheduleNext();
+}
+
 void MtxSchedule(uint action)
 {
     if(action == NOTIFY)
     {
-        WaittingToReady();
+        WaittingToReady(&gWaittingTask);
     }
     else if(action == WAIT) //当前任务进入阻塞态，并调度下一个任务
     {
-        RunningToWaitting();   //判断运行态的任务是否需要切换到阻塞态
+        RunningToWaitting(&gWaittingTask);   //判断运行态的任务是否需要切换到阻塞态
 
-        ReadyToRunning();   //就绪态任务切换到运行态
+        ScheduleNext();
+    }
+}
 
-        CheckRunningTask();
-
-        Queue_Rotate(&gRunningTask);
-
-        QueueNode *node = Queue_Front(&gRunningTask);
-        if (node)
-        {
-            gCTaskAddr = &Queue_Node(node, TaskNode, head)->task;
-            PrepareForRun(gCTaskAddr);
-            LoadTask(gCTaskAddr); //只加载任务的ldt
-        }
+void WaitTask(const char* name)
+{
+    Task* task = FindTaskByName(name);
+    if(task)
+    {
+        RunningToWaitting(&task->wait);
+        ScheduleNext();
     }
 }
 
 void KillTask()
 {
     QueueNode* node = Queue_Remove(&gRunningTask);
+
+    Task* task = &((TaskNode*)node)->task;
+
+    WaittingToReady(&task->wait);
+
+    task->id = 0;
 
     Queue_Add(&gFreeTask, node);
 

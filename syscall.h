@@ -28,6 +28,12 @@ enum{
 void Exit();
 
 /**
+ * @description: 等待目标任务退出
+ * @param 任务名
+ */
+void Wait(const char* name);
+
+/**
  * @description: 创建互斥锁
  * @param: 互斥锁类型
  * @return 互斥锁ID
