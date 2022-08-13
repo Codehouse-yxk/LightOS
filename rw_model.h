@@ -2,13 +2,8 @@
 #define RW_MODEL_H
 
 /**
- * @description: 写者
+ * @description: 运行读者写者模型
  */
-void Writer();
-
-/**
- * @description: 读者
- */
-void Reader();
+void RunReadWriteModel();
 
 #endif  //RW_MODEL_H

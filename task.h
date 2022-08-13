@@ -4,6 +4,7 @@
 
 #include "kernel.h"
 #include "queue.h"
+#include "app.h"
 
 typedef struct {
     /* 段寄存器 */
@@ -65,14 +66,23 @@ typedef struct
     Task task;
 } TaskNode;
 
+typedef struct
+{
+    QueueNode head;
+    AppInfo app;
+} AppNode;
+
+/* Mutex——cmd */
 enum{
     NOTIFY,
     WAIT
 };
 
+/* Task——cmd */
 enum{
-    KILLCMD,
-    WAITCMD
+    KILLCMD,    //杀死任务
+    WAITCMD,    //等待任务
+    REGAPPCMD   //注册任务
 };
 
 

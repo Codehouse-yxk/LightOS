@@ -34,6 +34,14 @@ void Exit();
 void Wait(const char* name);
 
 /**
+ * @description: 注册任务
+ * @param 任务名
+ * @param 任务入口函数
+ * @param 优先级【越小，获取CPU的概率越大】
+ */
+void RegApp(const char *name, void (*tmain)(), byte priority);
+
+/**
  * @description: 创建互斥锁
  * @param: 互斥锁类型
  * @return 互斥锁ID

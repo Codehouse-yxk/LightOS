@@ -2,7 +2,7 @@
  * @Author: yangxingkun
  * @Date: 2022-08-10 23:22:11
  * @FilePath: \LightOS\consumer_model.c
- * @Description: 生产消费者模型，测试mutex
+ * @Description: 生产消费者模型
  * @Github: https://github.com/Codehouse-yxk
  */
 
@@ -22,10 +22,12 @@ typedef struct
 static uint gMutex = 0;
 static List gList = {0};
 static uint gMaxNum = 40;
-static uint producerCnt = 0;
-static uint consumerCnt = 0;
+static uint producerACnt = 0;
+static uint producerBCnt = 0;
+static uint consumerACnt = 0;
+static uint consumerBCnt = 0;
 
-void Store(const char v)
+static void Store(const char v)
 {
     Product* new = Malloc(sizeof(Product));
 
@@ -53,21 +55,19 @@ static uint Feach(const char c)
     return ret;
 }
 
-void ProducerA()
+static void ProducerA()
 {
-    List_Init(&gList);
-    gMutex = CreateMutex(STRICT);
     int flag = 1;
     SetPrintPos(0, 15);
-    PrintString("Producer : ");
+    PrintString("ProducerA: ");
     while (flag)
     {
         EnterCritical(gMutex);
-        if(producerCnt < gMaxNum)
+        if(producerACnt < gMaxNum)
         {
             Store('A');
-            producerCnt++;
-            SetPrintPos(15+producerCnt, 15);
+            producerACnt++;
+            SetPrintPos(15+producerACnt, 15);
             PrintChar('A');
         }
         else
@@ -75,23 +75,25 @@ void ProducerA()
             flag = 0;
         }
         ExitCritical(gMutex);
-        Delay(4);
+        Delay(1);
     }
     SetPrintPos(0, 20);
     PrintString("Producer A exit \n");
 }
 
-void ProducerB()
+static void ProducerB()
 {
     int flag = 1;
+    SetPrintPos(0, 16);
+    PrintString("ProducerB: ");
     while (flag)
     {
         EnterCritical(gMutex);
-        if(producerCnt < gMaxNum)
+        if(producerBCnt < gMaxNum)
         {
             Store('B');
-            producerCnt++;
-            SetPrintPos(15+producerCnt, 15);
+            producerBCnt++;
+            SetPrintPos(15+producerBCnt, 16);
             PrintChar('B');
         }
         else
@@ -99,41 +101,43 @@ void ProducerB()
             flag = 0;
         }
         ExitCritical(gMutex);
-        Delay(6);
+        Delay(2);
     }
     SetPrintPos(0, 21);
     PrintString("Producer B exit \n");
 }
 
-void ConsumerA()
+static void ConsumerA()
 {
-    SetPrintPos(0, 18);
-    PrintString("Consumer : ");
-    while(consumerCnt<gMaxNum)
+    SetPrintPos(0, 17);
+    PrintString("ConsumerA: ");
+    while(consumerACnt<gMaxNum)
     {
         EnterCritical(gMutex);
         if(Feach('A'))
         {
-            consumerCnt++;
-            SetPrintPos(15+consumerCnt, 18);
+            consumerACnt++;
+            SetPrintPos(15+consumerACnt, 17);
             PrintChar('A');
         }
         ExitCritical(gMutex);
-        Delay(2);
+        Delay(1);
     }
     SetPrintPos(0, 22);
     PrintString("Consumer A exit \n");
 }
 
-void ConsumerB()
-{
-    while(consumerCnt<gMaxNum)
+static void ConsumerB()
+{    
+    SetPrintPos(0, 18);
+    PrintString("ConsumerB: ");
+    while(consumerBCnt<gMaxNum)
     {
         EnterCritical(gMutex);
         if(Feach('B'))
         {
-            consumerCnt++;
-            SetPrintPos(15+consumerCnt, 18);
+            consumerBCnt++;
+            SetPrintPos(15+consumerBCnt, 18);
             PrintChar('B');
         }
         ExitCritical(gMutex);
@@ -141,4 +145,43 @@ void ConsumerB()
     }
     SetPrintPos(0, 23);
     PrintString("Consumer B exit \n");
+}
+
+static void Initialize()
+{
+    SetPrintPos(0,12);
+    PrintString("Consumer model task initialize");
+    List_Init(&gList);
+    gMutex = CreateMutex(STRICT);
+}
+
+static void DeInit()
+{
+    Wait("ProducerA");
+    Wait("ProducerB");
+    Wait("ConsumerA");
+    Wait("ConsumerB");
+    ListNode* pos = NULL;
+    List_ForEach(&gList, pos)
+    {
+        List_DelNode(pos);
+        Free(pos);
+    }
+
+    DestroyMutex(gMutex);
+
+    SetPrintPos(0,13);
+    PrintString("Consumer model task finish");
+}
+
+void RunConsumerModel()
+{
+    Initialize();
+
+    RegApp("ProducerA", ProducerA, 255);
+    RegApp("ProducerB", ProducerB, 255);
+    RegApp("ConsumerA", ConsumerA, 255);
+    RegApp("ConsumerB", ConsumerB, 255);
+
+    RegApp("DeInit", DeInit, 1);
 }

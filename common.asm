@@ -26,8 +26,7 @@ EnableTimerEntry    equ     BaseOfSharedMemory + 24     ;使能定时器函数�
 SendEOIEntry        equ     BaseOfSharedMemory + 28     ;结束中断函数指针
 LoadTaskEntry       equ     BaseOfSharedMemory + 32     ;加载任务函数指针
 ;App
-GetAppToRunEntry    equ     BaseOfSharedMemory + 36
-GetAppNumEntry      equ     BaseOfSharedMemory + 40
+AppMainEntry        equ     BaseOfSharedMemory + 36     ;应用程序入口
 
 
 HeapBase       equ    0x70000

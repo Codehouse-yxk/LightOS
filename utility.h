@@ -33,7 +33,7 @@
 void Delay(int n);
 
 /* 字符串拷贝函数 */
-char* StrCpy(char* dst, const char* src, int n);
+char* StrCpy(char* dst, const char* src, uint n);
 
 /**
  * @description: 获取字符串长度

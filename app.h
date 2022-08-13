@@ -11,15 +11,10 @@ typedef struct{
     byte priority;  //数值越小，优先级越高（可获取时间片越久），最大值：255
 }AppInfo;
 
-/* 应用层任务模块初始化 */
-// void AppModInt();
-
-/* 获取指定任务执行 */
-// AppInfo* GetAppToRun(uint index);
-
-/* 获取任务数量 */
-// uint GetAppNum();
-
+/**
+ * @description: 应用层第一个任务
+ */
+void AppMain();
 
 
 #endif  //APP_H

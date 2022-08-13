@@ -9,17 +9,15 @@
 
 #include "task.h"
 #include "utility.h"
-#include "app.h"
+#include "memory.h"
 
-#define MAX_TASK_NUM        4       //最大任务数量
-#define MAX_RUNNING_TASK    2       //最大处于运行态任务数量
+#define MAX_TASK_NUM        16       //最大任务数量
+#define MAX_RUNNING_TASK    8        //最大处于运行态任务数量
 #define MAX_READY_TASK      (MAX_TASK_NUM - MAX_RUNNING_TASK)    //最大处于就绪态任务数量
 #define MAX_TASK_BUFF_NUM   (MAX_TASK_NUM + 1)
 #define PID_BASE            0x10    
-#define MAX_TIME_SLICE      260    //最大时间片
+#define MAX_TIME_SLICE      260      //最大时间片
 
-static AppInfo* (*GetAppToRun)(uint index) = NULL;
-static uint (*GetAppNum)() = NULL;
 
 void (*const RunTask)(volatile Task *p) = NULL;
 void (*const LoadTask)(volatile Task *p) = NULL;
@@ -28,14 +26,13 @@ static TSS gTss = {0};
 volatile Task *gCTaskAddr = NULL;
 static TaskNode gTaskBuffer[MAX_TASK_NUM] = {0};
 
+static Queue gAppToRun = {0};     //应用注册任务队列
 static Queue gFreeTask = {0};     //空闲队列
 static Queue gReadyTask = {0};    //就绪队列
 static Queue gRunningTask = {0};  //运行队列
 static Queue gWaittingTask = {0}; //等待队列
 
-static uint gAppToRunIndex = 0;
-
-static TaskNode gIdleTask = {0};    //默认任务
+static TaskNode gIdleTask = {0};  //默认任务
 
 static uint gPid = PID_BASE;
 
@@ -67,7 +64,15 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->rv.eip = (uint)TaskEntry;
     p->rv.eflags = 0x3202; //设置IOPL = 3（可以进行IO操作）， IF = 1（响应外部中断）；
 
-    StrCpy(p->name, name, sizeof(p->name)-1);
+    if(name)
+    {
+        StrCpy(p->name, name, sizeof(p->name)-1);
+    }
+    else
+    {
+        *(p->name) = 0;
+    }
+    
     Queue_Init(&p->wait);
     p->tmain = entry;
     p->id = id;
@@ -120,27 +125,45 @@ static void PrepareForRun(volatile Task *p)
     SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_LDT_INDEX), (uint)&p->ldt, sizeof(p->ldt) - 1, DA_LDT + DA_DPL0);
 }
 
+static AppInfoToRun(const char *name, void (*tmain)(), byte priority)
+{
+    AppNode* an = (AppNode*)Malloc(sizeof(AppNode));
+    if(an)
+    {
+        char* s = name ? Malloc(StrLen(name) + 1) : NULL;
+        an->app.name = s ? StrCpy(s, name, -1) : NULL;
+        an->app.tmain = tmain;
+        an->app.priority = priority;
+
+        Queue_Add(&gAppToRun, (QueueNode*)an);
+    }
+}
+
+static void AppMainToRun()
+{
+    AppInfoToRun("AppMain", (void*)(*((uint*)AppMainEntry)), 200);
+}
+
 /* 根据业务app，创建任务，并将任务放入就绪队列 */
 static void CreatTask()
 {
-    uint num = GetAppNum();
-
     //判断所有要执行的任务有没有全部创建，并且就绪队列有空位
-    while ((gAppToRunIndex < num) && (Queue_Length(&gReadyTask) < MAX_READY_TASK))
+    while ((Queue_Length(&gAppToRun) > 0) && (Queue_Length(&gReadyTask) < MAX_READY_TASK))
     {
         TaskNode *tn = (TaskNode *)Queue_Remove(&gFreeTask);
 
         if (tn)
         {
-            AppInfo* app = GetAppToRun(gAppToRunIndex);
-            InitTask(&tn->task, gPid++, app->name, app->tmain, app->priority);
+            AppNode* an = (AppNode*)Queue_Remove(&gAppToRun);
+            InitTask(&tn->task, gPid++, an->app.name, an->app.tmain, an->app.priority);
             Queue_Add(&gReadyTask, (QueueNode*)tn);
+            Free(an->app.name);
+            Free(an);
         }
         else
         {
             break;
         }
-        gAppToRunIndex++;
     }
 }
 
@@ -242,21 +265,6 @@ void IdleTask()
     // }
 }
 
-void TaskCallHandler( uint cmd, uint param1, uint param2)
-{
-    switch(cmd)
-    {
-        case KILLCMD:
-            KillTask();
-            break;
-        case WAITCMD:
-            WaitTask((const char*)param1);
-            break;
-        default:
-            break;
-    }
-}
-
 void TaskModInit()
 {
     int i = 0;
@@ -268,10 +276,7 @@ void TaskModInit()
         TaskNode* tn = (void*)AddrOff(gTaskBuffer, i);
         tn->task.stack = (void*)AddrOff(pStack, i * AppTaskSize);
     }
-
-    GetAppToRun = (void*)(*((uint*)GetAppToRunEntry));
-    GetAppNum = (void*)(*((uint*)GetAppNumEntry));
-
+    Queue_Init(&gAppToRun);
     Queue_Init(&gFreeTask);
     Queue_Init(&gWaittingTask);
     Queue_Init(&gReadyTask);
@@ -281,6 +286,8 @@ void TaskModInit()
     {
         Queue_Add(&gFreeTask, (QueueNode *)AddrOff(gTaskBuffer, i));
     }
+
+    AppMainToRun(); //创建第一个应用层任务
 
     // Tss共用，只需要设置一次
     SetDescValue(AddrOff(gGdtInfo.entry, GDT_TASK_TSS_INDEX), (uint)&gTss, sizeof(gTss) - 1, DA_386TSS + DA_DPL0); //在gdt中设置tss
@@ -359,4 +366,29 @@ void KillTask()
     Queue_Add(&gFreeTask, node);
 
     Schedule();
+}
+
+void TaskCallHandler( uint cmd, uint param1, uint param2)
+{
+    switch(cmd)
+    {
+        case KILLCMD:
+        {
+            KillTask();
+            break;
+        }
+        case WAITCMD:
+        {
+            WaitTask((const char*)param1);
+            break;
+        }
+        case REGAPPCMD:
+        {
+            AppInfo* info = (AppInfo*)param1;
+            AppInfoToRun(info->name, info->tmain, info->priority);
+            break;
+        }
+        default:
+            break;
+    }
 }

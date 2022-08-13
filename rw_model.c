@@ -1,3 +1,10 @@
+/*
+ * @Author: yangxingkun
+ * @Date: 2022-08-11 21:23:47
+ * @FilePath: \LightOS\rw_model.c
+ * @Description: 读写者模型
+ * @Github: https://github.com/Codehouse-yxk
+ */
 #include "rw_model.h"
 #include "syscall.h"
 #include "screen.h"
@@ -10,12 +17,9 @@ static char data = 'A';
 static uint gReaderCnt = 0;
 static uint stopFlag = 0;
 
-void Writer()
+static void Writer()
 {
     int cnt = 0;
-    gWriteMutex = CreateMutex(NORMAL);
-    gReadMutex = CreateMutex(STRICT);
-
     SetPrintPos(0, 15);
     PrintString("Writer: ");
 
@@ -24,8 +28,8 @@ void Writer()
         EnterCritical(gWriteMutex);
 
         SetPrintPos(10+cnt, 15);
-        data++;
         PrintChar(data);
+        data++;
         cnt++;
         
         ExitCritical(gWriteMutex);
@@ -37,7 +41,7 @@ void Writer()
     PrintString("Writer  exit");
 }
 
-void Reader()
+static void Reader()
 {
     static int cnt = 0;
     static int hFlag = 0;
@@ -78,5 +82,39 @@ void Reader()
     }
     SetPrintPos(0, 22);
     PrintString("Reader  exit");
+}
+
+static void Initialize()
+{
+    SetPrintPos(0,12);
+    PrintString("read_write model task initialize");
+    gWriteMutex = CreateMutex(NORMAL);
+    gReadMutex = CreateMutex(STRICT);
+}
+
+static void DeInit()
+{
+    Wait("Writer");
+    Wait("ReaderA");
+    Wait("ReaderB");
+    Wait("ReaderC");
+
+    DestroyMutex(gWriteMutex);
+    DestroyMutex(gReadMutex);
+
+    SetPrintPos(0,13);
+    PrintString("read_write model task finish");
+}
+
+void RunReadWriteModel()
+{
+    Initialize();
+
+    RegApp("Writer", Writer, 255);
+    RegApp("ReaderA", Reader, 255);
+    RegApp("ReaderB", Reader, 255);
+    RegApp("ReaderC", Reader, 255);
+
+    RegApp("DeInit", DeInit, 1);
 }
 

@@ -5,11 +5,8 @@
 
 global _start
 global AppModInit
-
-extern AppMain
-extern GetAppToRun
-extern GetAppNum
 extern MemModInit
+extern AppMain
 
 [section .text]
 [bits 32]
@@ -18,15 +15,12 @@ AppModInit:     ;0xF000
     push ebp
     mov ebp, esp
 
-    mov dword [GetAppToRunEntry], GetAppToRun
-    mov dword [GetAppNumEntry], GetAppNum
+    mov dword [AppMainEntry], AppMain
 
     push HeapSize
     push AppHeapBase
     call MemModInit
     add esp, 8
-
-    call AppMain
 
     leave
     

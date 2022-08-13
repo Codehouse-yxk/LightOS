@@ -17,7 +17,7 @@ extern volatile Task* gCTaskAddr;
 void PageFaultHandler()
 {
     SetPrintPos(0, 8);
-    PrintString("Page Fault, Kill :");
+    PrintString("Page Fault, Kill: ");
     PrintString((const char*)gCTaskAddr->name);
 
     KillTask();
@@ -26,7 +26,7 @@ void PageFaultHandler()
 void SegmentFaultHandler()
 {
     SetPrintPos(0, 8);
-    PrintString("Segment Fault, Kill :");
+    PrintString("Segment Fault, Kill: ");
     PrintString((const char*)gCTaskAddr->name);
 
     KillTask();

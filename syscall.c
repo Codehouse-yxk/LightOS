@@ -8,6 +8,7 @@
 
 #include "syscall.h"
 #include "screen.h"
+#include "app.h"
 
 void Exit()
 {
@@ -24,6 +25,18 @@ void Wait(const char* name)
     if(name)
     {
         SysCall(0, 1, name, 0);
+    }
+}
+
+void RegApp(const char *name, void (*tmain)(), byte priority)
+{
+    if(name && tmain)
+    {
+        AppInfo info = {0};
+        info.name = name;
+        info.tmain = tmain;
+        info.priority = priority;
+        SysCall(0, 2, &info, 0);
     }
 }
 
