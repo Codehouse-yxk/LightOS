@@ -12,6 +12,9 @@ global PageFaultHandlerEntry
 global SegmentFaultHandlerEntry
 global TimerHandlerEntry
 global SysCallHandlerEntry
+global KeyboardHandlerEntry
+global ReadPort
+global WritePort
 
 extern gGdtInfo
 extern gIdtInfo
@@ -21,11 +24,11 @@ extern PageFaultHandler
 extern SegmentFaultHandler
 extern TimerHandler
 extern SysCallHandler
+extern KeyboardHandler
 extern KMain
 extern ClearScreen
 extern RunTask
 extern InitInterrupt
-extern EnableTimer
 extern SendEOI
 extern LoadTask
 
@@ -125,14 +128,50 @@ InitGlobal:
     mov eax, dword [InitInterruptEntry]
     mov dword [InitInterrupt], eax
 
-    mov eax, dword [EnableTimerEntry]
-    mov dword [EnableTimer], eax
-
     mov eax, dword [SendEOIEntry]
     mov dword [SendEOI], eax
 
     mov eax, dword [LoadTaskEntry]
     mov dword [LoadTask], eax
+
+    leave
+
+    ret
+
+; 读取端口数据
+; param: 目标端口号
+; return: 读到的数据[一个字节]
+ReadPort:
+    push ebp
+    mov ebp, esp
+
+    xor eax, eax
+    mov dx, [ebp + 8]
+    in al, dx
+
+    nop
+    nop
+    nop
+
+    leave
+
+    ret
+
+; 往端口写数据
+; param1: 目标端口
+; param2：写入的数据[一个字节]
+WritePort:
+    push ebp
+    mov ebp, esp
+
+    xor eax, eax
+    mov dx, [ebp + 8]
+    mov al, [ebp + 12]
+    out dx, al
+
+    nop
+    nop
+    nop
 
     leave
 
@@ -164,6 +203,11 @@ SysCallHandlerEntry:
     pop ebx
     pop ecx
     pop edx
+    EndISR
+
+KeyboardHandlerEntry:
+    BeginISR
+    call KeyboardHandler
     EndISR
     
 

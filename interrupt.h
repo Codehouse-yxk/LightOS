@@ -6,9 +6,6 @@
 /* 初始化中断，汇编中定义的InitInterrupt，通过共享内存获取函数指针 */
 void (*const InitInterrupt)();
 
-/* 使能中断，汇编中定义的EnableTimer，通过共享内存获取函数指针 */
-void (*const EnableTimer)();
-
 /* 退出中断，汇编中定义的SendEOI，通过共享内存获取函数指针 */
 void (*const SendEOI)(uint port);
 

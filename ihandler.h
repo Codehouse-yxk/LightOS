@@ -27,7 +27,6 @@ void TimerHandler();
 /* 系统调用（0x80中断）入口函数 */
 extern void SysCallHandlerEntry();
 
-/* ，ax：功能码 */
 /**
  * @description: 0x80中断服务程序
  * @param 中断功能号
@@ -36,5 +35,13 @@ extern void SysCallHandlerEntry();
  * @param 参数2
  */
 void SysCallHandler(uint type, uint cmd, uint param1, uint param2);
+
+/* 键盘中断入口函数 */
+extern void KeyboardHandlerEntry();
+
+/* 键盘中断服务程序 */
+void KeyboardHandler();
+
+
 
 #endif // IHANDLER_H

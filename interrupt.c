@@ -11,20 +11,18 @@
 #include "utility.h"
 
 void (*const InitInterrupt)() = NULL;
-void (*const EnableTimer)() = NULL;
 void (*const SendEOI)(uint port) = NULL;
 
 void IntModInit()
 {
     //设置中断入口
     SetIntHandler(AddrOff(gIdtInfo.entry, 0x20), (uint)TimerHandlerEntry);
+    SetIntHandler(AddrOff(gIdtInfo.entry, 0x21), (uint)KeyboardHandlerEntry);
     SetIntHandler(AddrOff(gIdtInfo.entry, 0x80), (uint)SysCallHandlerEntry);
     SetIntHandler(AddrOff(gIdtInfo.entry, 0x0E), (uint)PageFaultHandlerEntry);
     SetIntHandler(AddrOff(gIdtInfo.entry, 0x0D), (uint)SegmentFaultHandlerEntry);
 
     InitInterrupt();
-
-    // EnableTimer();   放到启动任务中去使能，否则会造成时序问题
 }
 
 int SetIntHandler(Gate *pGate, uint ifunc)

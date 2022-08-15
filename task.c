@@ -253,16 +253,6 @@ static void WaittingToReady(Queue* wait)
 void IdleTask()
 {
     while(1);
-    // int i = 0;
-    // SetPrintPos(0, 14);
-    // PrintString("Task Idle: ");
-    // while (1)
-    // {
-    //     SetPrintPos(11, 14);
-    //     PrintChar('A' + i);
-    //     i = (i + 1) % 10;
-    //     Delay(1);
-    // }
 }
 
 void TaskModInit()

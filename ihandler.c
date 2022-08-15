@@ -11,8 +11,10 @@
 #include "task.h"
 #include "screen.h"
 #include "mutex.h"
+#include "keyboard.h"
 
 extern volatile Task* gCTaskAddr;
+extern byte ReadPort(ushort port);
 
 void PageFaultHandler()
 {
@@ -58,4 +60,11 @@ void SysCallHandler(uint type, uint cmd, uint param1, uint param2)
         default:
             break;
     }
+}
+
+void KeyboardHandler()
+{
+    byte scanCode = ReadPort(0x60);
+    PutScanCode(scanCode);
+    SendEOI(MASTER_EOI_PORT);
 }

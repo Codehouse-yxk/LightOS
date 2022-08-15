@@ -28,6 +28,9 @@
 #define Min(a, b)   (((a) > (b)) ? (b) : (a))
 #define Max(a, b)   (((a) > (b)) ? (a) : (b))
 
+/* 计算数组元素的个数 */
+#define Dim(a)  (sizeof(a)/sizeof(*(a)))
+
 
 /* 延时函数 */
 void Delay(int n);

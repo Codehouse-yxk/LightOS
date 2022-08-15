@@ -204,7 +204,6 @@ StoreGlobal:
 
     mov dword [RunTaskEntry], RunTask
     mov dword [InitInterruptEntry], InitInterrupt
-    mov dword [EnableTimerEntry], EnableTimer
     mov dword [SendEOIEntry], SendEOI
     mov dword [LoadTaskEntry], LoadTask
 
@@ -241,8 +240,7 @@ RunTask:
     nop
     %endrep
     
-    and ax, 0xFE
-    
+    and ax, 0xFC    ;启动定时器中断、键盘中断
     out dx, al
 
     ;启动页表
@@ -390,29 +388,6 @@ InitInterrupt:
     
     leave 
     ret
-
-;
-;使能定时器
-EnableTimer:
-    push ebp
-    mov ebp, esp
-    
-    push ax
-    push dx
-    
-    mov dx, MASTER_IMR_PORT
-    
-    call ReadIMR
-    
-    and ax, 0xFE
-    
-    call WriteIMR
-    
-    pop dx
-    pop ax
-    
-    leave
-    ret  
 
 ;往目标端口发送中断结束标志
 ;void SendEOI(uint port)

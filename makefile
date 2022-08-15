@@ -13,19 +13,20 @@ KERNEL_SRC := 	kmain.c 	\
 				fmemory.c 	\
 				vmemory.c 	\
 				memory.c	\
-				mutex.c
+				mutex.c		\
+				keyboard.c
 
-APP_SRC :=	screen.c 	\
-			utility.c 	\
-			list.c		\
-			queue.c		\
-			fmemory.c 	\
-			vmemory.c 	\
-			memory.c    \
-			syscall.c	\
-			consumer_model.c\
-			rw_model.c 	\
-			app.c
+APP_SRC :=		screen.c 	\
+				utility.c 	\
+				list.c		\
+				queue.c		\
+				fmemory.c 	\
+				vmemory.c 	\
+				memory.c    \
+				syscall.c	\
+				consumer_model.c\
+				rw_model.c 	\
+				app.c
 
 KERNEL_ADDR := B000
 APP_ADDR := F000
