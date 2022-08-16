@@ -18,15 +18,19 @@ enum
 };
 
 /**
- * @description: 键盘中断触发接口函数
- * @param {byte} code
- * @return {*}
+ * @description: 键盘驱动模块初始化
+ */
+void KeyboardModInit();
+
+/**
+ * @description: 将扫描码构建出键码并保存到缓冲区
+ * @param 键盘扫描码
  */
 void PutScanCode(byte code);
 
 /**
- * @description: 
- * @return {*}
+ * @description: 获取缓冲区键码
+ * @return 键码
  */
 uint FeachKeyCode();
 

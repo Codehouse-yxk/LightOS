@@ -29,7 +29,7 @@
 #define Max(a, b)   (((a) > (b)) ? (a) : (b))
 
 /* 计算数组元素的个数 */
-#define Dim(a)  (sizeof(a)/sizeof(*(a)))
+#define ArrayNum(a)  (sizeof(a)/sizeof(*(a)))
 
 
 /* 延时函数 */

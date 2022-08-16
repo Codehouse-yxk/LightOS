@@ -2,7 +2,7 @@
  * @Author: yangxingkun
  * @Date: 2022-08-14 21:08:33
  * @FilePath: \LightOS\keyboard.c
- * @Description: 键盘驱动程序
+ * @Description: 键盘驱动
  * @Github: https://github.com/Codehouse-yxk
  */
 
@@ -10,6 +10,20 @@
 #include "screen.h"
 #include "utility.h"
 
+#define KB_BUFF_SIZE    8
+
+typedef struct
+{
+    uint head;
+    uint tail;
+    uint count;
+    uint max;
+    uint buff[KB_BUFF_SIZE];
+}keyCodeBuff;
+
+/**
+ * @description: 按键映射表
+ */
 static const KeyCode gKeyMap[] = 
 {
 /* 0x00 - none      */ {  0,        0,        0,         0   },
@@ -105,8 +119,11 @@ static const KeyCode gKeyMap[] =
 /* 0x5A - ???       */ {  0,        0,        0,         0   },
 /* 0x5B - Left Win  */ {  0,        0,       0x5B,      0x5B },	
 /* 0x5C - Right Win */ {  0,        0,       0x5C,      0x5C },
-/* 0x5D - Apps      */ {  0,        0,       0x5D,      0x5D }
+/* 0x5D - Apps      */ {  0,        0,       0x5D,      0x5D },
+/* 0x5E - Pause     */ {  0,        0,       0x5E,      0x13 }
 };
+
+static keyCodeBuff gKCBuff = {0};
 
 /**
  * @description: 检测按键类型
@@ -163,13 +180,13 @@ static uint IsNumLock(byte code)
  */
 static int IsNumPadKey(byte code, int E0)
 {
-    static const byte cNumScanCode[]            = {0x52, 0x53, 0x4F, 0x50, 0x51, 0x4B, 0x4C, 0x4D, 0x47, 0x48, 0x49, 0x35, 0x37, 0x4A, 0x4E, 0x1C};  
-    static const byte cNumE0[Dim(cNumScanCode)] = {0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1,    0,    0,    0,    1   };
+    static const byte cNumScanCode[]                 = {0x52, 0x53, 0x4F, 0x50, 0x51, 0x4B, 0x4C, 0x4D, 0x47, 0x48, 0x49, 0x35, 0x37, 0x4A, 0x4E, 0x1C};  
+    static const byte cNumE0[ArrayNum(cNumScanCode)] = {0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    1,    0,    0,    0,    1   };
 
     int ret = 0;
     int i = 0;
 
-    for(i=0; i<Dim(cNumScanCode); i++)
+    for(i=0; i<ArrayNum(cNumScanCode); i++)
     {
         byte* pc = AddrOff(cNumScanCode, i);
         byte* pe = AddrOff(cNumE0, i);
@@ -310,15 +327,61 @@ static uint MakeCode(KeyCode* tkc, int shift, int capsLock, int numLock, int E0)
 }
 
 /**
- * @description: 判断并处理pause按键扫描码
+ * @description: 将Pause键原始扫描码码映射到一个新的扫描码，然后通过按照处理普通按键的方式进行处理
  * @param 扫描码
  * @return 没有处理该扫描码：0  处理了该扫描码：1
  */
 static uint PauseHandler(byte code)
 {
-    uint ret = 0;
+    static byte cPauseCode[] = {0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5};
+    static int cPause = 0;
+    uint ret = ((code == 0xE1) || cPause);
 
+    if(ret)
+    {
+        byte* pc = AddrOff(cPauseCode, cPause);
+
+        if(code == *pc)
+        {
+            cPause++;
+        }
+        else
+        {
+            cPause = 0;
+            ret = 0;
+        }
+
+        //确认是pause键，就重新映射扫描码
+        if(cPause == ArrayNum(cPauseCode))
+        {
+            cPause = 0;
+            PutScanCode(0x5E);  //0xE1, 0x1D, 0x45 --> 0x5E【按下】
+            PutScanCode(0xDE);  //0xE1, 0x9D, 0xC5 --> 0xDE【松开】
+        }
+    }
     return ret;
+}
+
+/**
+ * @description: 缓存按键信息
+ * @param 键码
+ */
+static void StoreKeyCode(uint code)
+{
+    uint* p = NULL;
+    
+    if(gKCBuff.count < gKCBuff.max)
+    {
+        p = AddrOff(gKCBuff.buff, gKCBuff.tail);
+        *p = code;
+        gKCBuff.count++;
+        gKCBuff.tail = (gKCBuff.tail + 1) % gKCBuff.max;
+    }
+    else if(gKCBuff.count > 0)
+    {
+        FeachKeyCode();
+        StoreKeyCode(code); //只会递归一次
+    }
 }
 
 /**
@@ -367,13 +430,8 @@ static uint KeyHandler(byte code)
             }
             
             //生成键码，4字节，格式为：按键动作|扫描码|虚拟键码|ASCII码
-            code = pressed | MakeCode(tkc, cShift, cCapsLock, cNumLock, E0);
-
-            if(pressed)
-            {
-                PrintChar((char)code);  //打印第一个字节，为ASCII码
-                PrintChar(' ');
-            }
+            uint mcode = pressed | MakeCode(tkc, cShift, cCapsLock, cNumLock, E0);
+            StoreKeyCode(mcode); //存储键码
             
             E0 = 0;
         }
@@ -382,11 +440,16 @@ static uint KeyHandler(byte code)
     return ret;
 }
 
+void KeyboardModInit()
+{
+    gKCBuff.max = 2;
+}
+
 void PutScanCode(byte code)
 {
     if(PauseHandler(code))      //处理pause特殊按键
     {
-
+        
     }
     else if(KeyHandler(code))   //处理普通按键
     {
@@ -394,11 +457,22 @@ void PutScanCode(byte code)
     }
     else                        //其他特殊按键暂时不做处理
     {
-
+        PrintString("Unknow Key\n");
     }
 }
 
 uint FeachKeyCode()
 {
+    uint ret = 0;
 
+    if(gKCBuff.count > 0)
+    {
+        uint *p = AddrOff(gKCBuff.buff, gKCBuff.head);
+        ret = *p;
+
+        gKCBuff.head = (gKCBuff.head + 1) % gKCBuff.max;
+        gKCBuff.count--;
+    }
+
+    return ret;
 }

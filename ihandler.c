@@ -66,5 +66,31 @@ void KeyboardHandler()
 {
     byte scanCode = ReadPort(0x60);
     PutScanCode(scanCode);
+    
+    /*  测试键盘按键
+    uint code = 0;
+    while(code = FeachKeyCode())
+    {
+        if(((byte)(code >> 8))==0x13 && (code & 0x1000000))
+        {
+            PrintIntHex(code);
+            PrintString("Pause pressed\n");
+        }
+        else if((byte)(code >> 8)==0x13)
+        {
+            PrintIntHex(code);
+            PrintString("Pause release\n");
+        }
+
+        if((char)code && (code & 0x1000000))
+        {
+            PrintChar((char)code);
+        }
+        else if(((byte)(code >> 8))==0x0D && (code & 0x1000000)) 
+        {
+            PrintChar('\n');
+        }
+    }
+    */
     SendEOI(MASTER_EOI_PORT);
 }

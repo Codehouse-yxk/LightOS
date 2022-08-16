@@ -11,6 +11,7 @@
 #include "interrupt.h"
 #include "memory.h"
 #include "mutex.h"
+#include "keyboard.h"
 
 /**
  * 内核入口函数
@@ -40,6 +41,8 @@ void KMain()
     PrintChar('\n');
 
     MemModInit((byte*)kernalHeapBase, HeapSize);
+
+    KeyboardModInit();
 
     MutexModInit();
 
