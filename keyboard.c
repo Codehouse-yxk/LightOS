@@ -9,17 +9,9 @@
 #include "keyboard.h"
 #include "screen.h"
 #include "utility.h"
+#include "task.h"
 
-#define KB_BUFF_SIZE    8
-
-typedef struct
-{
-    uint head;
-    uint tail;
-    uint count;
-    uint max;
-    uint buff[KB_BUFF_SIZE];
-}keyCodeBuff;
+static Queue gWaitQueue = {0};
 
 /**
  * @description: 按键映射表
@@ -363,6 +355,26 @@ static uint PauseHandler(byte code)
 }
 
 /**
+ * @description: 获取缓冲区键码
+ * @return 键码
+ */
+static uint FeachKeyCode()
+{
+    uint ret = 0;
+
+    if(gKCBuff.count > 0)
+    {
+        uint *p = AddrOff(gKCBuff.buff, gKCBuff.head);
+        ret = *p;
+
+        gKCBuff.head = (gKCBuff.head + 1) % gKCBuff.max;
+        gKCBuff.count--;
+    }
+
+    return ret;
+}
+
+/**
  * @description: 缓存按键信息
  * @param 键码
  */
@@ -443,6 +455,7 @@ static uint KeyHandler(byte code)
 void KeyboardModInit()
 {
     gKCBuff.max = 2;
+    Queue_Init(&gWaitQueue);
 }
 
 void PutScanCode(byte code)
@@ -461,18 +474,72 @@ void PutScanCode(byte code)
     }
 }
 
-uint FeachKeyCode()
+
+/**
+ * @description: 进入等待队列
+ * @param param1
+ * @param param2
+ */
+static void Gowait(uint param1, uint param2)
 {
-    uint ret = 0;
+    Event* event = CreateEvent(KeyboardEvent, (uint)&gWaitQueue, param1, 0);
+    EventSchedule(WAIT, event);
+}
 
-    if(gKCBuff.count > 0)
+/**
+ * @description: 唤醒所有等待键盘输入的任务
+ * @param 缓冲区的键码
+ */
+static void NotifyAll(uint code)
+{
+    Event event = {KeyboardEvent, (uint)&gWaitQueue, code, 0};
+    EventSchedule(NOTIFY, &event);
+}
+
+/**
+ * @description: 读取按键数据
+ * @param param1
+ * @param param2
+ */
+static void ReadKeyboard(uint param1, uint param2)
+{
+    if(param1)
     {
-        uint *p = AddrOff(gKCBuff.buff, gKCBuff.head);
-        ret = *p;
+        uint kc = FeachKeyCode();
 
-        gKCBuff.head = (gKCBuff.head + 1) % gKCBuff.max;
-        gKCBuff.count--;
+        if(kc)
+        {
+            uint *ret = (uint *)param1;
+            *ret = kc;
+            NotifyAll(kc);
+        }
+        else
+        {
+            Gowait(param1, param2);
+        }
     }
+}
 
-    return ret;
+void NotifyGetKeyCode()
+{
+    uint kc = FeachKeyCode();
+    if(kc)
+    {
+        NotifyAll(kc);
+    }
+}
+
+void KeyboardCallHandler(uint cmd, uint param1, uint param2)
+{
+    switch (cmd)
+    {
+        case 0:
+        {
+            ReadKeyboard(param1, param2);
+            break;
+        }
+        
+        default:
+            break;
+    }
 }

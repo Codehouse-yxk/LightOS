@@ -2,7 +2,10 @@
 #define KEYBOARD_H
 
 #include "type.h"
+#include "event.h"
+#include "queue.h"
 
+#define KB_BUFF_SIZE    8
 typedef struct
 {
     byte ascii1;   // no shift code
@@ -10,6 +13,15 @@ typedef struct
     byte scode;    // scan code
     byte kcode;    // key code
 } KeyCode;
+
+typedef struct
+{
+    uint head;
+    uint tail;
+    uint count;
+    uint max;
+    uint buff[KB_BUFF_SIZE];
+}keyCodeBuff;
 
 enum
 {
@@ -29,10 +41,17 @@ void KeyboardModInit();
 void PutScanCode(byte code);
 
 /**
- * @description: 获取缓冲区键码
- * @return 键码
+ * @description: 按键通知
  */
-uint FeachKeyCode();
+void NotifyGetKeyCode();
+
+/**
+ * @description: 键盘数据系统调用处理函数
+ * @param 键盘指令
+ * @param 参数1
+ * @param 参数2
+ */
+void KeyboardCallHandler(uint cmd, uint param1, uint param2);
 
 
 

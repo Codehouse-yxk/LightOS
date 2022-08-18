@@ -15,7 +15,7 @@ KERNEL_SRC := 	kmain.c 	\
 				memory.c	\
 				mutex.c		\
 				keyboard.c	\
-				event.c
+				event.c	
 
 APP_SRC :=		screen.c 	\
 				utility.c 	\
@@ -27,6 +27,7 @@ APP_SRC :=		screen.c 	\
 				syscall.c	\
 				consumer_model.c\
 				rw_model.c 	\
+				shell.c		\
 				app.c
 
 KERNEL_ADDR := B000

@@ -14,12 +14,11 @@
 #include "syscall.h"
 #include "consumer_model.h"
 #include "rw_model.h"
-
-void TaskA();
-void TaskB();
+#include "shell.h"
 
 void AppMain()
 {
+    ShellModInit();
     // RunConsumerModel();
     // ClearScreen();
     // RunReadWriteModel();

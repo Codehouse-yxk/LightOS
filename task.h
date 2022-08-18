@@ -135,4 +135,16 @@ void KillTask();
  */
 void WaitTask(const char* name);
 
+/**
+ * @description: 获取当前任务名称
+ * @return 任务名
+ */
+const char* GetCurrentTaskName();
+
+/**
+ * @description: 获取当前任务ID
+ * @return 任务ID
+ */
+uint GetCurrentTaskId();
+
 #endif //TASK_H

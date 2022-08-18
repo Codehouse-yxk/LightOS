@@ -12,8 +12,6 @@
 #include "task.h"
 #include "event.h"
 
-extern volatile Task* gCTaskAddr;
-
 static List gMList = {0};
 
 void MutexModInit()
@@ -138,7 +136,7 @@ static void SysStrictEnter(Mutex* mutex, uint* wait)
 {
     if(mutex->lock)
     {
-        if(isEqual(mutex->lock, gCTaskAddr))
+        if(isEqual(mutex->lock, GetCurrentTaskId()))
         {
             *wait = 0;  //同一任务重复加锁，直接返回继续执行
         }
@@ -149,7 +147,7 @@ static void SysStrictEnter(Mutex* mutex, uint* wait)
     }
     else
     {
-        mutex->lock = (uint)gCTaskAddr;
+        mutex->lock = (uint)GetCurrentTaskId();
         *wait = 0;
     }
 }
@@ -160,13 +158,13 @@ void SysEnterCritical(Mutex* mutex, uint* wait)
     {
         switch (mutex->type)
         {
-        case NORMAL:
-            SysNormalEnter(mutex, wait);    //普通互斥锁：只要锁没有用直接上锁【同一个任务不能重复上锁，会阻塞】
-            break;
-        case STRICT:
-            SysStrictEnter(mutex, wait);    //严格互斥锁：需要判断是否是同一个任务上锁【同一个任务可以重复上锁，不会阻塞】
-        default:
-            break;
+            case NORMAL:
+                SysNormalEnter(mutex, wait);    //普通互斥锁：只要锁没有用直接上锁【同一个任务不能重复上锁，会阻塞】
+                break;
+            case STRICT:
+                SysStrictEnter(mutex, wait);    //严格互斥锁：需要判断是否是同一个任务上锁【同一个任务可以重复上锁，不会阻塞】
+            default:
+                break;
         }
     }
 }
@@ -180,7 +178,7 @@ static void SysNormalExit(Mutex* mutex)
 
 static void SysStrictExit(Mutex* mutex)
 {
-    if(isEqual(mutex->lock, gCTaskAddr))
+    if(mutex->lock == GetCurrentTaskId())
     {
         SysNormalExit(mutex);
     }
@@ -196,13 +194,13 @@ void SysExitCritical(Mutex* mutex)
     {
         switch (mutex->type)
         {
-        case NORMAL:
-            SysNormalExit(mutex);   //普通互斥锁直接突出
-            break;
-        case STRICT:
-            SysStrictExit(mutex);   //严格互斥锁必须由上锁任务来解锁
-        default:
-            break;
+            case NORMAL:
+                SysNormalExit(mutex);   //普通互斥锁直接突出
+                break;
+            case STRICT:
+                SysStrictExit(mutex);   //严格互斥锁必须由上锁任务来解锁
+            default:
+                break;
         }
     }
 }

@@ -106,3 +106,10 @@ uint DestroyMutex(uint mutex)
     SysCall(1, 3, mutex, &ret);
     return ret;
 }
+
+uint ReadKey()
+{
+    volatile uint ret = 0;
+    SysCall(2, 0, &ret, 0);
+    return ret;
+}

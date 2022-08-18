@@ -67,5 +67,11 @@ void ExitCritical(uint mutex);
  */
 uint DestroyMutex(uint mutex);
 
+/**
+ * @description: 读取按键数据
+ * @return 键码
+ */
+uint ReadKey();
+
 
 #endif //SYSCALL_H

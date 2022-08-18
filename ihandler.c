@@ -13,14 +13,13 @@
 #include "mutex.h"
 #include "keyboard.h"
 
-extern volatile Task* gCTaskAddr;
 extern byte ReadPort(ushort port);
 
 void PageFaultHandler()
 {
     SetPrintPos(0, 8);
     PrintString("Page Fault, Kill: ");
-    PrintString((const char*)gCTaskAddr->name);
+    PrintString(GetCurrentTaskName());
 
     KillTask();
 }
@@ -29,7 +28,7 @@ void SegmentFaultHandler()
 {
     SetPrintPos(0, 8);
     PrintString("Segment Fault, Kill: ");
-    PrintString((const char*)gCTaskAddr->name);
+    PrintString(GetCurrentTaskName());
 
     KillTask();
 }
@@ -57,6 +56,8 @@ void SysCallHandler(uint type, uint cmd, uint param1, uint param2)
         case 1:
             MutexCallHandler(cmd, param1, param2);
             break;
+        case 2:
+            KeyboardCallHandler(cmd, param1, param2);
         default:
             break;
     }
@@ -66,31 +67,6 @@ void KeyboardHandler()
 {
     byte scanCode = ReadPort(0x60);
     PutScanCode(scanCode);
-    
-    /*  测试键盘按键
-    uint code = 0;
-    while(code = FeachKeyCode())
-    {
-        if(((byte)(code >> 8))==0x13 && (code & 0x1000000))
-        {
-            PrintIntHex(code);
-            PrintString("Pause pressed\n");
-        }
-        else if((byte)(code >> 8)==0x13)
-        {
-            PrintIntHex(code);
-            PrintString("Pause release\n");
-        }
-
-        if((char)code && (code & 0x1000000))
-        {
-            PrintChar((char)code);
-        }
-        else if(((byte)(code >> 8))==0x0D && (code & 0x1000000)) 
-        {
-            PrintChar('\n');
-        }
-    }
-    */
+    NotifyGetKeyCode();
     SendEOI(MASTER_EOI_PORT);
 }

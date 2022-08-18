@@ -89,6 +89,16 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->tssSelector = GDT_TASK_TSS_SELECTOR;
 }
 
+const char* GetCurrentTaskName()
+{
+    return gCTaskAddr->name;
+}
+
+uint GetCurrentTaskId()
+{
+    return gCTaskAddr->id;
+}
+
 /**
  * @description: 根据任务名称查找目标任务
  * @param 目标任务名
@@ -159,7 +169,7 @@ static void CreatTask()
             AppNode* an = (AppNode*)Queue_Remove(&gAppToRun);
             InitTask(&tn->task, gPid++, an->app.name, an->app.tmain, an->app.priority);
             Queue_Add(&gReadyTask, (QueueNode*)tn);
-            Free(an->app.name);
+            Free((void*)an->app.name);
             Free(an);
         }
         else
@@ -347,8 +357,26 @@ static void MutexSchedule(uint action, Event* event)
 
 static void KeyboardSchedule(uint action, Event* event)
 {
-    //键盘中增加等待队列
-    //键盘有输入时，通过中断唤醒等待输入的任务
+    Queue* wait = (Queue*)event->id;
+
+    if(action == NOTIFY)
+    {
+        uint kc = event->param1;
+        ListNode* pos = NULL;
+
+        List_ForEach((List*)wait, pos)
+        {
+            //将键盘产生的键码赋值给每个等待任务的param1，将数据传给用户
+            TaskNode* tn = (TaskNode*)pos;
+            uint* ret = (uint *)(tn->task.event->param1);
+            *ret = kc;
+        }
+        WaittingToReady(wait);
+    }
+    else if(action == WAIT)
+    {
+        WaitEvent(wait, event);
+    }
 }
 
 static void TaskSchedule(uint action, Event* event)
