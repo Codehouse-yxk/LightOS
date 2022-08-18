@@ -23,15 +23,19 @@ static void Writer()
     SetPrintPos(0, 15);
     PrintString("Writer: ");
 
-    while(data < 'Z')
+    while(1)
     {   
         EnterCritical(gWriteMutex);
 
         SetPrintPos(10+cnt, 15);
         PrintChar(data);
+        if(data >= 'Z'){
+            ExitCritical(gWriteMutex);
+            break;
+        }
         data++;
         cnt++;
-        
+
         ExitCritical(gWriteMutex);
 
         Delay(2);
@@ -78,7 +82,7 @@ static void Reader()
         }
         ExitCritical(gReadMutex);
 
-        Delay(1);
+        Delay(2);
     }
     SetPrintPos(0, 22);
     PrintString("Reader  exit");

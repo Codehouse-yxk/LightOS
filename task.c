@@ -10,6 +10,8 @@
 #include "task.h"
 #include "utility.h"
 #include "memory.h"
+#include "screen.h"
+#include "mutex.h"
 
 #define MAX_TASK_NUM        16       //最大任务数量
 #define MAX_RUNNING_TASK    8        //最大处于运行态任务数量
@@ -30,7 +32,6 @@ static Queue gAppToRun = {0};     //应用注册任务队列
 static Queue gFreeTask = {0};     //空闲队列
 static Queue gReadyTask = {0};    //就绪队列
 static Queue gRunningTask = {0};  //运行队列
-static Queue gWaittingTask = {0}; //等待队列
 
 static TaskNode gIdleTask = {0};  //默认任务
 
@@ -78,6 +79,7 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
     p->id = id;
     p->total = MAX_TIME_SLICE - pri;
     p->current = 0;
+    p->event = NULL;
 
     SetDescValue(AddrOff(p->ldt, LDT_VIDEO_INDEX), 0xB8000, 0x07FFF, DA_DRWA + DA_32 + DA_DPL3); //设置ldt显存段
     SetDescValue(AddrOff(p->ldt, LDT_CODE32_INDEX), 0x00000, kernalHeapBase - 1, DA_C + DA_32 + DA_DPL3);   //设置ldt代码段
@@ -240,9 +242,12 @@ static void RunningToWaitting(Queue* wait)
 
 static void WaittingToReady(Queue* wait)
 {
-    if(Queue_Length(wait) > 0)
+    while(Queue_Length(wait) > 0)
     {
         TaskNode* tn = (TaskNode*)Queue_Front(wait);
+
+        DestroyEvent(tn->task.event);
+        tn->task.event = NULL;
 
         Queue_Remove(wait);
 
@@ -268,7 +273,6 @@ void TaskModInit()
     }
     Queue_Init(&gAppToRun);
     Queue_Init(&gFreeTask);
-    Queue_Init(&gWaittingTask);
     Queue_Init(&gReadyTask);
     Queue_Init(&gRunningTask);
 
@@ -313,23 +317,68 @@ static void ScheduleNext()
     }
 }
 
+static void WaitEvent(Queue* wait, Event* event)
+{   
+    gCTaskAddr->event = event;
+
+    RunningToWaitting(wait);
+
+    ScheduleNext();
+}
+
 void Schedule()
 {
     RunningToReady();   //判断运行态的任务是否需要切换到就绪态
     ScheduleNext();
 }
 
-void MtxSchedule(uint action)
+static void MutexSchedule(uint action, Event* event)
 {
+    Mutex* mutex = (Mutex*)event->id;
     if(action == NOTIFY)
     {
-        WaittingToReady(&gWaittingTask);
+        WaittingToReady(&mutex->wait);
     }
-    else if(action == WAIT) //当前任务进入阻塞态，并调度下一个任务
+    else if(action == WAIT)
     {
-        RunningToWaitting(&gWaittingTask);   //判断运行态的任务是否需要切换到阻塞态
+        WaitEvent(&mutex->wait, event);
+    }
+}
 
-        ScheduleNext();
+static void KeyboardSchedule(uint action, Event* event)
+{
+    //键盘中增加等待队列
+    //键盘有输入时，通过中断唤醒等待输入的任务
+}
+
+static void TaskSchedule(uint action, Event* event)
+{
+    Task* task = (Task*)event->id;
+    if(action == NOTIFY)
+    {
+        WaittingToReady(&task->wait);
+    }
+    else if(action == WAIT)
+    {
+        WaitEvent(&task->wait, event);
+    }
+}
+
+void EventSchedule(uint action, Event* event)
+{
+    switch(event->type)
+    {
+        case MutexEvent:
+            MutexSchedule(action, event);
+            break;
+        case KeyboardEvent:
+            KeyboardSchedule(action, event);
+            break;
+        case TaskEvent:
+            TaskSchedule(action, event);
+            break;
+        default:
+            break;
     }
 }
 
@@ -338,8 +387,11 @@ void WaitTask(const char* name)
     Task* task = FindTaskByName(name);
     if(task)
     {
-        RunningToWaitting(&task->wait);
-        ScheduleNext();
+        Event* event = CreateEvent(TaskEvent, (uint)task, 0, 0);
+        if(event)
+        {
+            EventSchedule(WAIT, event);
+        }
     }
 }
 
@@ -348,9 +400,10 @@ void KillTask()
     QueueNode* node = Queue_Remove(&gRunningTask);
 
     Task* task = &((TaskNode*)node)->task;
-
-    WaittingToReady(&task->wait);
-
+    Event event = {TaskEvent, (uint)task, 0, 0};
+    EventSchedule(NOTIFY, &event);
+    
+    //任务结束，id必须设置为0，因为wait时需要用id进行判断，如果对应id任务已经销毁，则不需要阻塞等待。
     task->id = 0;
 
     Queue_Add(&gFreeTask, node);

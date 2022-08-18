@@ -10,6 +10,7 @@
 #include "screen.h"
 #include "memory.h"
 #include "task.h"
+#include "event.h"
 
 extern volatile Task* gCTaskAddr;
 
@@ -58,6 +59,7 @@ Mutex* SysCreateMutex(uint type)
 
     if(ret)
     {
+        Queue_Init(&ret->wait);
         ret->lock = 0;
         ret->type = type;
         List_Add(&gMList, (ListNode*)ret);
@@ -109,12 +111,21 @@ uint SysDestroyMutex(Mutex* mutex)
     return ret;
 }
 
+static void GoWait(Mutex* mutex, uint* wait)
+{
+    Event* event = CreateEvent(MutexEvent, (uint)mutex, 0, 0);
+    if(event)
+    {
+        *wait = 1;
+        EventSchedule(WAIT, event);
+    }
+}
+
 static void SysNormalEnter(Mutex* mutex, uint* wait)
 {
     if(mutex->lock)
     {
-        *wait = 1;
-        MtxSchedule(WAIT);
+        GoWait(mutex, wait);
     }
     else
     {
@@ -133,8 +144,7 @@ static void SysStrictEnter(Mutex* mutex, uint* wait)
         }
         else
         {
-            *wait = 1;  //传给用户，当阻塞的任务重新被执行时，用户层再次进行mutex检测
-            MtxSchedule(WAIT);
+            GoWait(mutex, wait);
         }
     }
     else
@@ -163,16 +173,16 @@ void SysEnterCritical(Mutex* mutex, uint* wait)
 
 static void SysNormalExit(Mutex* mutex)
 {
+    Event event = {MutexEvent, (uint)mutex, 0, 0};
     mutex->lock = 0;
-    MtxSchedule(NOTIFY);
+    EventSchedule(NOTIFY, &event);
 }
 
 static void SysStrictExit(Mutex* mutex)
 {
     if(isEqual(mutex->lock, gCTaskAddr))
     {
-        mutex->lock = 0;
-        MtxSchedule(NOTIFY);
+        SysNormalExit(mutex);
     }
     else    //非申请锁的任务操作锁，直接杀掉
     {

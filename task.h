@@ -5,6 +5,7 @@
 #include "kernel.h"
 #include "queue.h"
 #include "app.h"
+#include "event.h"
 
 typedef struct {
     /* 段寄存器 */
@@ -58,6 +59,7 @@ typedef struct
     char       name[16]; 
     Queue      wait;
     byte*      stack;   //任务执行时使用的栈
+    Event*     event;   //当前任务等待的事件
 } Task;
 
 typedef struct
@@ -116,9 +118,11 @@ void LaunchTask();
 void Schedule();
 
 /**
- * @description: 互斥锁调度
+ * @description: 事件调度入口
+ * @param 调度类型
+ * @param 调度信息
  */
-void MtxSchedule(uint action);
+void EventSchedule(uint action, Event* event);
 
 /**
  * @description: 任务销毁

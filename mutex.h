@@ -3,10 +3,12 @@
 
 #include "type.h"
 #include "list.h"
+#include "queue.h"
 
 typedef struct
 {
     ListNode head;
+    Queue wait;
     uint type;
     uint lock;
 } Mutex;
