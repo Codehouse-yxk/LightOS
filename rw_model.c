@@ -17,6 +17,13 @@ static char data = 'A';
 static uint gReaderCnt = 0;
 static uint stopFlag = 0;
 
+static void DataReset()
+{
+    data = 'A';
+    gReaderCnt = 0;
+    stopFlag = 0;
+}
+
 static void Writer()
 {
     int cnt = 0;
@@ -92,6 +99,7 @@ static void Initialize()
 {
     SetPrintPos(0,12);
     PrintString("read_write model task initialize");
+    DataReset();
     gWriteMutex = CreateMutex(NORMAL);
     gReadMutex = CreateMutex(STRICT);
 }
@@ -119,6 +127,6 @@ void RunReadWriteModel()
     RegApp("ReaderB", Reader, 255);
     RegApp("ReaderC", Reader, 255);
 
-    RegApp("DeInit", DeInit, 1);
+    RegApp("DeInit", DeInit, 255);
 }
 

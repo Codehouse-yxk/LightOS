@@ -7,6 +7,13 @@
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 
+#define ERR_START_W   0
+#define ERR_START_H   6
+#define CMD_START_W   0
+#define CMD_START_H   9
+#define TASK_START_W  0
+#define TASK_START_H  12
+
 typedef enum {
     SCREEN_GRAY = 0x07,
     SCREEN_BLUE = 0x09,
@@ -36,5 +43,11 @@ int PrintIntDec(int n);
 
 /* 清空屏幕 */
 int PrintIntHex(uint n);
+
+/* 获取当前光标横坐标 */
+byte GetPrintPosW();
+
+/* 获取当前光标纵坐标 */
+byte GetPrintPosh();
 
 #endif // SCREEN_H

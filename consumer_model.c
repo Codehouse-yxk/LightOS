@@ -27,6 +27,14 @@ static uint producerBCnt = 0;
 static uint consumerACnt = 0;
 static uint consumerBCnt = 0;
 
+static void DataReset()
+{
+    producerACnt = 0;
+    producerBCnt = 0;
+    consumerACnt = 0;
+    consumerBCnt = 0;
+}
+
 static void Store(const char v)
 {
     Product* new = Malloc(sizeof(Product));
@@ -151,6 +159,7 @@ static void Initialize()
 {
     SetPrintPos(0,12);
     PrintString("Consumer model task initialize");
+    DataReset();
     List_Init(&gList);
     gMutex = CreateMutex(STRICT);
 }
@@ -183,5 +192,5 @@ void RunConsumerModel()
     RegApp("ConsumerA", ConsumerA, 255);
     RegApp("ConsumerB", ConsumerB, 255);
 
-    RegApp("DeInit", DeInit, 1);
+    RegApp("DeInit", DeInit, 255);
 }

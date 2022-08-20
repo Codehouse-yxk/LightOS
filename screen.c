@@ -176,3 +176,14 @@ int PrintIntHex(uint n)
 
 	return ret;
 }
+
+byte GetPrintPosW()
+{
+	return gPosW;
+}
+
+
+byte GetPrintPosh()
+{
+	return gPosH;
+}

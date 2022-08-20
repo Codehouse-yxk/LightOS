@@ -17,7 +17,7 @@ extern byte ReadPort(ushort port);
 
 void PageFaultHandler()
 {
-    SetPrintPos(0, 8);
+    SetPrintPos(ERR_START_W, ERR_START_H);
     PrintString("Page Fault, Kill: ");
     PrintString(GetCurrentTaskName());
 
@@ -26,7 +26,7 @@ void PageFaultHandler()
 
 void SegmentFaultHandler()
 {
-    SetPrintPos(0, 8);
+    SetPrintPos(ERR_START_W, ERR_START_H);
     PrintString("Segment Fault, Kill: ");
     PrintString(GetCurrentTaskName());
 
