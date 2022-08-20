@@ -81,20 +81,24 @@ static void Clear()
     PrintString(TIP_STR);
 }
 
-static void ClearErrLine()
+static void ClearInfoLine()
 {
+    int h = 0;
     int w = 0;
     SetPrintPos(CMD_START_W, CMD_START_H + 1);
-    for(w=0; w<SCREEN_WIDTH; w++)
+    for(h=CMD_START_H+1; h <= CMD_START_H+2; h++)
     {
-        PrintChar(' ');
+        for(w=0; w<SCREEN_WIDTH; w++)
+        {
+            PrintChar(' ');
+        }
     }
     SetPrintPos(CMD_START_W, CMD_START_H + 1);
 }
 
 static UnKnow(const char* str)
 {
-    ClearErrLine();
+    ClearInfoLine();
     PrintString("Unknow Cmd: ");
     PrintString(str);
 }
@@ -114,7 +118,7 @@ static void ResetCmdLine()
 static void EnterHandle()
 {
     gKBuff[gKIndex++] = 0;
-    ClearErrLine();
+    ClearInfoLine();
     if((gKIndex > 1) && !DoCmd(gKBuff))
     {
         UnKnow(gKBuff);
@@ -144,25 +148,35 @@ static void BackSpaceHandle()
 
 static void KeyHandle(char c, byte vCode)
 {
-    if(c)   //输入是ascii码
+    if(gKIndex < BUFF_SIZE)
     {
-        PrintChar(c);
-        gKBuff[gKIndex++] = c;
+        if(c)   //输入是ascii码
+        {
+            PrintChar(c);
+            gKBuff[gKIndex++] = c;
+        }
+        else
+        {
+            switch(vCode)
+            {
+                case KEY_ENTER:
+                    EnterHandle();
+                    break;
+                case KEY_BACKSPACE:
+                    BackSpaceHandle();
+                    break;
+                default:
+                    break;
+            }
+        }   
     }
     else
     {
-        switch(vCode)
-        {
-            case KEY_ENTER:
-                EnterHandle();
-                break;
-            case KEY_BACKSPACE:
-                BackSpaceHandle();
-                break;
-            default:
-                break;
-        }
+        UnKnow("Input cmd too long");
+        gKIndex = 0;
+        ResetCmdLine();
     }
+    
 }
 
 static void AddCmdEntry(const char* cmd, void (*run)())
