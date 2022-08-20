@@ -16,12 +16,16 @@ static uint gReadMutex = 0;
 static char data = 'A';
 static uint gReaderCnt = 0;
 static uint stopFlag = 0;
+static int readerCnt = 0;
+static int readerHFlag = 0;
 
 static void DataReset()
 {
     data = 'A';
     gReaderCnt = 0;
     stopFlag = 0;
+    readerCnt = 0;
+    readerHFlag = 0;
 }
 
 static void Writer()
@@ -54,8 +58,6 @@ static void Writer()
 
 static void Reader()
 {
-    static int cnt = 0;
-    static int hFlag = 0;
     SetPrintPos(0, 18);
     PrintString("Reader: ");
 
@@ -72,14 +74,14 @@ static void Reader()
         ExitCritical(gReadMutex);
 
         //读数据
-        if(cnt > 50)
+        if(readerCnt > 50)
         {
-            hFlag++;
-            cnt = 0;
+            readerHFlag++;
+            readerCnt = 0;
         }
-        SetPrintPos(10+cnt, 18+hFlag);
+        SetPrintPos(10+readerCnt, 18+readerHFlag);
         PrintChar(data);
-        cnt++;
+        readerCnt++;
 
         EnterCritical(gReadMutex);
         gReaderCnt--;
