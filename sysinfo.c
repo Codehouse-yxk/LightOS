@@ -2,7 +2,7 @@
  * @Author: yangxingkun
  * @Date: 2022-08-21 15:16:11
  * @FilePath: \LightOS\sysinfo.c
- * @Description: 
+ * @Description: 系统相关信息模块（如：物理内存大小）
  * @Github: https://github.com/Codehouse-yxk
  */
 

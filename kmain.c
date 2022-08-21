@@ -23,7 +23,7 @@ void KMain()
 
     SetPrintColor(SCREEN_RED);
 
-    PrintString("LightOS\n\n");
+    PrintString("LightOS\n");
 
     PrintString("Gdt Entry: ");
     PrintIntHex((uint)gGdtInfo.entry);
@@ -39,6 +39,10 @@ void KMain()
 
     PrintString("Idt Size: ");
     PrintIntDec(gIdtInfo.size);
+    PrintChar('\n');
+
+    PrintString("Number Of Hard Disk: ");
+    PrintIntDec(*((byte*)0x475));   //BIOS中0x475地址上保存的是硬盘数量
     PrintChar('\n');
 
     MemModInit((byte*)kernalHeapBase, HeapSize);
