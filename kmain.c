@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "mutex.h"
 #include "keyboard.h"
+#include "sysinfo.h"
 
 /**
  * 内核入口函数
@@ -38,6 +39,12 @@ void KMain()
 
     PrintString("Idt Size: ");
     PrintIntDec(gIdtInfo.size);
+    PrintChar('\n');
+
+    PrintString("Mem Size:");
+    PrintIntHex(gMemSize);
+    PrintString("       ");
+    PrintIntDec(gMemSize >> 20);
     PrintChar('\n');
 
     MemModInit((byte*)kernalHeapBase, HeapSize);

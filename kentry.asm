@@ -31,6 +31,7 @@ extern RunTask
 extern InitInterrupt
 extern SendEOI
 extern LoadTask
+extern gMemSize
 
 ; 进入异常
 %macro BeginFSR 0
@@ -133,6 +134,9 @@ InitGlobal:
 
     mov eax, dword [LoadTaskEntry]
     mov dword [LoadTask], eax
+
+    mov eax, dword [MemSize]
+    mov dword [gMemSize], eax
 
     leave
 
