@@ -73,5 +73,11 @@ uint DestroyMutex(uint mutex);
  */
 uint ReadKey();
 
+/**
+ * @description: 获取物理内存容量
+ * @return 物理内存容量
+ */
+uint GetMemSize();
+
 
 #endif //SYSCALL_H

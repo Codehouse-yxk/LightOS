@@ -439,7 +439,7 @@ void KillTask()
     Schedule();
 }
 
-void TaskCallHandler( uint cmd, uint param1, uint param2)
+void TaskCallHandler(uint cmd, uint param1, uint param2)
 {
     switch(cmd)
     {

@@ -69,8 +69,8 @@ static void Clear()
 {
     int h = 0;
     int w = 0;
-    SetPrintPos(CMD_START_W, CMD_START_H);
-    for(h=CMD_START_H; h<SCREEN_HEIGHT; h++)
+    SetPrintPos(ERR_START_W, ERR_START_H);
+    for(h=ERR_START_H; h<SCREEN_HEIGHT; h++)
     {
         for(w=0; w<SCREEN_WIDTH; w++)
         {
@@ -235,11 +235,23 @@ static void ConsumerModel()
     Dowait();
 }
 
+static void ReadMem()
+{
+    uint ret = GetMemSize();
+    PrintString("Pysical Memory Size: ");
+    PrintIntHex(ret);
+
+    PrintString(" Kb       ");
+    PrintIntDec(ret >> 20);
+    PrintString(" MB");
+}
+
 void ShellModInit()
 {
     List_Init(&gCmdList);
     AddCmdEntry("clear", Clear);
     AddCmdEntry("rw_model", RwModel);
     AddCmdEntry("cs_model", ConsumerModel);
+    AddCmdEntry("mem", ReadMem);
     RegApp("Shell", Shell, 255);
 }

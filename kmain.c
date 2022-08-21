@@ -41,12 +41,6 @@ void KMain()
     PrintIntDec(gIdtInfo.size);
     PrintChar('\n');
 
-    PrintString("Mem Size:");
-    PrintIntHex(gMemSize);
-    PrintString("       ");
-    PrintIntDec(gMemSize >> 20);
-    PrintChar('\n');
-
     MemModInit((byte*)kernalHeapBase, HeapSize);
 
     KeyboardModInit();

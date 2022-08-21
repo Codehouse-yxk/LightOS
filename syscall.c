@@ -113,3 +113,10 @@ uint ReadKey()
     SysCall(2, 0, &ret, 0);
     return ret;
 }
+
+uint GetMemSize()
+{
+    volatile uint ret = 0;
+    SysCall(3, 0, &ret, 0);
+    return ret;
+}

@@ -12,6 +12,7 @@
 #include "screen.h"
 #include "mutex.h"
 #include "keyboard.h"
+#include "sysinfo.h"
 
 extern byte ReadPort(ushort port);
 
@@ -58,6 +59,8 @@ void SysCallHandler(uint type, uint cmd, uint param1, uint param2)
             break;
         case 2:
             KeyboardCallHandler(cmd, param1, param2);
+        case 3:
+            SysInfoCallHandler(cmd, param1, param2);
         default:
             break;
     }
