@@ -181,7 +181,7 @@ static void KeyHandle(char c, byte vCode)
 
 static void AddCmdEntry(const char* cmd, void (*run)())
 {
-    CmdRun* cr = Malloc(sizeof(CmdRun));
+    CmdRun* cr = (CmdRun*)Malloc(sizeof(CmdRun));
     if(cr && cmd && run)
     {
         int len = StrLen(cmd);

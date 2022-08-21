@@ -91,7 +91,7 @@ static void InitTask(Task *p, uint id, const char* name, void (*entry)(), ushort
 
 const char* GetCurrentTaskName()
 {
-    return gCTaskAddr->name;
+    return (const char*)gCTaskAddr->name;
 }
 
 uint GetCurrentTaskId()

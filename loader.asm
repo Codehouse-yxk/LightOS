@@ -125,6 +125,10 @@ BLMain:
     cmp dx, 0
 	jz KernelErr
 
+    ;获取物理内存容量
+    call GetMemSize
+
+    ;保存共享数据
     call StoreGlobal
 
     ;①加载全局段描述符表
@@ -190,6 +194,35 @@ InitDescItem:
     
     pop eax
     
+    ret
+
+;获取物理内存容量
+GetMemSize:
+    mov dword [MemSize], 0
+
+    xor eax, eax    ;清空CF标志位
+    mov eax, 0xE801 ;获取物理内存大小，BIOS中断号
+
+    int 0x15
+
+    jc geterr       ;cf为1，表示获取失败ret
+
+    shl eax, 10     ;15M以下内存容量【1kb -> 1b】
+    shl ebx, 6      ;16M以上内存容量【64kb -> 1kb】
+    shl ebx, 10     ;16M以上内存容量【1kb -> 1b】
+
+    mov ecx, 1
+    shl ecx, 20     ;修正内存容量，加上1MB的内存黑洞
+
+    add dword [MemSize], eax
+    add dword [MemSize], ebx
+    add dword [MemSize], ecx
+
+    jmp getok
+
+geterr:
+    mov dword [MemSize], 0
+getok:
     ret
 
 ;保存内核需要访问的数据信息到共享内存中

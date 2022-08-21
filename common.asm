@@ -22,6 +22,7 @@ IdtEntry            equ     BaseOfSharedMemory + 8      ;中断描述符表起�
 IdtSize             equ     BaseOfSharedMemory + 12     ;中断描述符表大小
 RunTaskEntry        equ     BaseOfSharedMemory + 16     ;普通任务函数指针
 InitInterruptEntry  equ     BaseOfSharedMemory + 20     ;初始化中断函数指针
+MemSize             equ     BaseOfSharedMemory + 24     ;存储物理内存容量
 SendEOIEntry        equ     BaseOfSharedMemory + 28     ;结束中断函数指针
 LoadTaskEntry       equ     BaseOfSharedMemory + 32     ;加载任务函数指针
 ;App
