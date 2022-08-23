@@ -16,7 +16,8 @@ KERNEL_SRC := 	kmain.c 	\
 				mutex.c		\
 				keyboard.c	\
 				event.c		\
-				sysinfo.c
+				sysinfo.c	\
+				harddisk.c
 
 APP_SRC :=		screen.c 	\
 				utility.c 	\

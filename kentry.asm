@@ -15,6 +15,8 @@ global SysCallHandlerEntry
 global KeyboardHandlerEntry
 global ReadPort
 global WritePort
+global ReadPortW
+global WritePortW
 
 extern gGdtInfo
 extern gIdtInfo
@@ -145,6 +147,7 @@ InitGlobal:
 ; 读取端口数据
 ; param: 目标端口号
 ; return: 读到的数据[一个字节]
+; byte ReadPort(ushort port);
 ReadPort:
     push ebp
     mov ebp, esp
@@ -180,6 +183,55 @@ WritePort:
     leave
 
     ret
+
+; 读取端口数据(单位：字)
+; param1: 目标端口号
+; param2: 读取缓冲区
+; param3: 需要读取2n个字节数据
+; void ReadPortW(ushort port, ushort* buf, uint n);
+ReadPortW:
+    push ebp
+    mov ebp, esp
+
+    mov edx, [ebp + 8]      ;port
+    mov edi, [ebp + 12]     ;buf
+    mov ecx, [ebp + 16]     ;n
+
+    cld
+    rep insw
+
+    nop
+    nop
+    nop
+
+    leave
+
+    ret
+
+; 往端口写数据(单位：字)
+; param1: 目标端口号
+; param2: 需要写的数据
+; param3: 需要读取2n个字节数据
+; void WritePortW(ushort port, ushort* buf, uint n)
+WritePortW:
+    push ebp
+    mov ebp, esp
+
+    mov edx, [ebp + 8]      ;port
+    mov esi, [ebp + 12]     ;buf
+    mov ecx, [ebp + 16]     ;n
+
+    cld
+    rep outsw
+
+    nop
+    nop
+    nop
+
+    leave
+
+    ret
+
 
 PageFaultHandlerEntry:
     BeginFSR
