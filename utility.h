@@ -54,4 +54,22 @@ uint StrLen(const char* str);
  */
 uint StrCmp(const char* str1, const char* str2, uint n);
 
+/**
+ * @description: 内存数据拷贝
+ * @param 目的地址
+ * @param 源地址
+ * @param 拷贝长度
+ * @return 目的地址
+ */
+byte* MemCpy(byte* dst, const byte* src, uint n);
+
+/**
+ * @description: 内存数据设置
+ * @param 目的地址
+ * @param 设置的长度
+ * @param 设置的数据
+ * @return 目的地址
+ */
+byte* MemSet(byte* dst, uint n, byte val);
+
 #endif //UTILITY_H

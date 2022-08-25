@@ -12,7 +12,6 @@ void Delay(int n)
 {
     while (n-- > 0)
     {
-
         int i = 0;
         int j = 0;
         for (i = 0; i < 1000; i++)
@@ -28,12 +27,31 @@ void Delay(int n)
 char *StrCpy(char *dst, const char *src, uint n)
 {
     char *ret = dst;
+    uint dstA = (uint)dst;
+    uint srcA = (uint)src;
     int i = 0;
-    for (i = 0; (src[i])&&(i<n); i++)
+
+    //防止地址覆盖
+    if(dstA < srcA)
     {
-        dst[i] = src[i];
+        for (i = 0; (src[i])&&(i<n); i++)
+        {
+            dst[i] = src[i];
+        }
+        dst[i] = 0;
     }
-    dst[i] = 0;
+
+    if(dstA > srcA)
+    {
+        uint len = StrLen(src);
+        len = Min(len, n);
+        dst[len] = 0;
+        for (i=len-1; i>=0; i--)
+        {
+            dst[i] = src[i];
+        }
+    }
+
     return ret;
 }
 
@@ -64,5 +82,45 @@ uint StrCmp(const char* str1, const char* str2, uint n)
             ret = isEqual(str1[i], str2[i]);
         }
     }
+    return ret;
+}
+
+byte* MemCpy(byte* dst, const byte* src, uint n)
+{
+    byte* ret = dst;
+    uint dstA = (uint)dst;
+    uint srcA = (uint)src;
+    int i = 0;
+
+    //防止地址覆盖
+    if(dstA < srcA) 
+    {
+        for(i=0; i<n; i++)
+        {
+            dst[i] = src[i];
+        }
+    }
+
+    if(dstA > srcA)
+    {
+        for(i=n-1; i>=0; i--)
+        {
+            dst[i] = src[i];
+        }
+    }
+
+    return ret;
+}
+
+byte* MemSet(byte* dst, uint n, byte val)
+{
+    byte* ret = dst;
+    int i = 0;
+
+    while(i < n)
+    {
+        dst[i++] = val;
+    }
+
     return ret;
 }

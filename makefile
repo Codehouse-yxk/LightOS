@@ -38,8 +38,6 @@ APP_ADDR := F000
 IMG := LightOS
 IMG_PATH := /mnt/hgfs
 
-HD_IMG := hd.img
-
 DIR_DEPS := deps
 DIR_EXES := exes
 DIR_OBJS := objs
@@ -74,7 +72,7 @@ APP_OBJS := $(addprefix $(DIR_OBJS)/, $(APP_OBJS))
 APP_DEPS := $(APP_SRC:.c=.dep)
 APP_DEPS := $(addprefix $(DIR_DEPS)/, $(APP_DEPS))
 
-all : $(DIR_OBJS) $(DIR_EXES) $(IMG) $(HD_IMG) $(BOOT_OUT) $(LOADER_OUT) $(KERNEL_OUT) $(APP_OUT)
+all : $(DIR_OBJS) $(DIR_EXES) $(IMG) $(BOOT_OUT) $(LOADER_OUT) $(KERNEL_OUT) $(APP_OUT)
 	@echo "Build Success ==> LightOS!"
 	
 ifeq ("$(MAKECMDGOALS)", "all")
@@ -89,9 +87,6 @@ endif
 
 $(IMG) :
 	bximage $@ -q -fd -size=1.44
-
-$(HD_IMG) :
-	bximage $@ -q -hd -mode=flat -size=80
 	
 $(BOOT_OUT) : $(BOOT_SRC) $(BLFUNC_SRC)
 	nasm $< -o $@
@@ -147,7 +142,7 @@ endif
 	gcc -MM -E $(filter %.c, $^) | sed 's,\(.*\)\.o[ :]*,objs/\1.o $@ : ,g' > $@
 	
 clean :
-	sudo rm -fr $(IMG) $(HD_IMG) $(BOOT_OUT) $(LOADER_OUT) $(KERNEL_OUT) $(APP_OUT) $(DIRS)
+	sudo rm -fr $(IMG) $(BOOT_OUT) $(LOADER_OUT) $(KERNEL_OUT) $(APP_OUT) $(DIRS)
 	
 rebuild :
 	@$(MAKE) clean
