@@ -14,6 +14,7 @@
 #include "keyboard.h"
 #include "sysinfo.h"
 #include "harddisk.h"
+#include "fs.h"
 
 /**
  * 内核入口函数
@@ -52,6 +53,8 @@ void KMain()
 
     MutexModInit();
 
+    HDModeInit();
+
     uint n = GetHDSectors();
     PrintString("Number Of HD Sector: ");
     PrintIntDec(n);   //获取硬盘中扇区数
@@ -59,15 +62,8 @@ void KMain()
     PrintIntDec(n*512/1024/1024);
     PrintString(" MB \n");
 
-    byte* buf = Malloc(512);
-
-    buf[1] = 0x33;
-    buf[2] = 0x44;
-    buf[3] = 0x1f;
-    buf[128] = 0xdd;
-    buf[511] = 0xff;
-    PrintString("HD read result: ");
-    PrintIntDec(HDRead(2, buf));
+    PrintString("HD is format: ");
+    PrintIntDec(FSFormat());
 
     // AppModInit();
 
