@@ -35,6 +35,14 @@ typedef struct			//存储于1扇区，记录根目录相关信息
 	uint lastBytes;		//记录最后一个扇区用了多少字节
 }FSRoot;
 
+typedef struct
+{
+    uint* pSct;         //指向对应分配（管理）单元所在的扇区
+    uint sctIdx;        //原始数据绝对扇区号
+    uint sctOff;        //原始数据绝对扇区号对应的分配单元的位置【扇区偏移】
+    uint idxOff;        //原始数据绝对扇区号对应的分配单元的位置【扇区内偏移】
+} MapPos;
+
 /**
  * @description: 格式化硬盘
  * @return 格式化成功：1，格式化失败：0
