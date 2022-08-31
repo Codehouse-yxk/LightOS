@@ -325,6 +325,266 @@ uint FSIsFormatted()
     return ret;
 }
 
+/**
+ * @description: 将目标扇区插入扇区链表尾部
+ * @param 扇区链表起始扇区
+ * @param 目标扇区
+ * @return 成功：1，失败：0
+ */
+static uint AddToLast(uint sctBegin, uint si)
+{
+    uint ret = 0;
+    uint last = FindLast(sctBegin);
+
+    if(last != SCT_END_FLAG)
+    {
+        MapPos lmp = FindInMap(last);
+        MapPos smp = FindInMap(si);
+
+        if(lmp.pSct && smp.pSct)
+        {
+            if(lmp.sctOff == smp.sctOff)    //两个扇区对应的管理单元处于同一扇区
+            {
+                uint* pInt = AddrOff(lmp.pSct, lmp.idxOff);
+                *pInt = lmp.sctOff * MAP_ITEM_CNT + smp.idxOff; //将新增的扇区插入链表末尾
+            
+                pInt = AddrOff(lmp.pSct, smp.idxOff);
+                *pInt = SCT_END_FLAG;       //尾部扇区写入结束标记
+
+                ret = HDWrite(lmp.sctOff + FIXED_SCT_SIZE, (byte*)lmp.pSct);
+            }
+            else
+            {
+                uint* pInt = AddrOff(lmp.pSct, lmp.idxOff);
+                *pInt = smp.sctOff * MAP_ITEM_CNT + smp.idxOff; //将新增的扇区插入链表末尾
+            
+                pInt = AddrOff(smp.pSct, smp.idxOff);
+                *pInt = SCT_END_FLAG;       //尾部扇区写入结束标记
+
+                ret = HDWrite(lmp.sctOff + FIXED_SCT_SIZE, (byte*)lmp.pSct)
+                        && HDWrite(smp.sctOff + FIXED_SCT_SIZE, (byte*)smp.pSct);
+            }
+            Free(lmp.pSct);
+            Free(smp.pSct);
+        }
+    }
+    return ret;
+}
+
+/**
+ * @description: 检查根目录容量是否需要扩展
+ * @param 文件信息
+ * @return 扩展根目录容量：1，没有扩展容量：0
+ */
+static uint CheckStorage(FSRoot* fe)
+{
+    uint ret = 0;
+
+    if(fe->lastBytes == SECT_SIZE)  //当数据链表最后一个扇区的空间用完时，需要申请新的扇区
+    {
+        uint si = AllocSector();
+
+        //将申请到的空间插入数据链表的最后
+        if(si != SCT_END_FLAG)
+        {
+            if(fe->sctBegin == SCT_END_FLAG)
+            {
+                fe->sctBegin = si;
+                ret = 1;
+            }
+            else
+            {
+                ret = AddToLast(fe->sctBegin, si);
+            }
+        }
+
+        if(ret)
+        {
+            fe->sctNum++;
+            fe->lastBytes = 0;
+        }
+        else
+        {
+            FreeSector(si);
+        }
+    }
+    return ret;
+}
+
+/**
+ * @description: 创建新文件的FileEntry并写入根目录区
+ * @param 文件名
+ * @param 根目录数据起始扇区
+ * @param 最后一个扇区已用的字节数
+ * @return 新的FileEntry写入成功：1，写入失败：0
+ */
+static uint CreateFileEntry(const char* fileName, uint sctBegin, uint lastBytes)
+{
+    uint ret = 0;
+    uint last = FindLast(sctBegin);
+    FileEntry* feBase = NULL;
+
+    if((last != SCT_END_FLAG) && (feBase = (FileEntry*)ReadSector(last)))
+    {
+        uint offSet = lastBytes / FE_SIZE;
+        FileEntry* fe = AddrOff(feBase, offSet);
+
+        //初始化新的FileEntry
+        StrCpy(fe->name, fileName, sizeof(fe->name)-1);
+        fe->type = 0;   //0表示文件类型
+        fe->sctBegin = SCT_END_FLAG;
+        fe->sctNum = 0;
+        fe->inSctIdx = last;
+        fe->inSctOff = offSet;
+        fe->lastBytes = SECT_SIZE;
+        
+        ret = HDWrite(last, (byte*)feBase);
+
+        Free(feBase);
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 在根目录创建文件
+ * @param 文件名
+ * @return 成功：1，失败：0
+ */
+static uint CreateInRoot(const char* fileName)
+{
+    uint ret = 0;
+    FSRoot* root = (FSRoot*)ReadSector(ROOT_SCT_IDX);
+
+    if(root)
+    {
+        CheckStorage(root);     //检测是否有足够空间容纳新文件的FileEntry
+
+        if(CreateFileEntry(fileName, root->sctBegin, root->lastBytes))
+        {
+            root->lastBytes += FE_SIZE;                 //创建FileEntry成功，更新最后一个扇区使用的字节数
+            ret = HDWrite(ROOT_SCT_IDX, (byte*)root);   //将根目录（1扇区）信息扇区写回硬盘
+        }
+    }
+
+    return ret;
+}
+
+uint FCreate(const char* fileName)
+{
+    uint ret = FExisted(fileName);
+
+    if(ret != FS_EXISTED)
+    {
+        ret = CreateInRoot(fileName) ? FS_SUCCEED : FS_FAILED;
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 在扇区中查找目标文件
+ * @param 文件名
+ * @param 需要遍历的目录项数量
+ * @return 文件目录项
+ */
+static FileEntry* FindInSector(const char* fileName, FileEntry*feBase, uint num)
+{
+    FileEntry* ret = NULL;
+    int i = 0;
+
+    for (i = 0; i < num; i++)
+    {
+        FileEntry* fe = AddrOff(feBase, i);
+        if(StrCmp(fe->name, fileName, -1))
+        {
+            ret = (FileEntry*)Malloc(FE_SIZE);
+            if(ret)
+            {
+                *ret = *fe;
+            }
+            break;
+        }
+    }
+    
+    return ret;
+}
+
+/**
+ * @description: 在扇区查找文件项
+ * @param 文件名
+ * @param 根目录数据起始扇区
+ * @param 根目录数据占用的扇区数量
+ * @param 最后一个扇区所占用的字节数
+ * @return 文件目录项
+ */
+static FileEntry* FindFileEntry(const char* fileName, uint sctBegin, uint sctNum, uint lastBytes)
+{
+    FileEntry* ret = NULL;
+    uint next = sctBegin;
+    uint i = 0;
+
+    //①在前sctNum-1个扇区查找
+    for(i=0; i<sctNum-1; i++)
+    {
+        FileEntry* feBase = (FileEntry*)ReadSector(next);
+        if(feBase)
+        {
+            ret = FindInSector(fileName, feBase, FE_ITEM_CNT);
+            Free(feBase);
+        }
+        
+        if(ret) break;
+
+        next = NextSector(next);    //若没有找到，继续查找下一个扇区
+    }
+
+    //②查找最后一个扇区
+    if(!ret)
+    {
+        FileEntry* feBase = (FileEntry*)ReadSector(next);
+        if(feBase)
+        {
+            ret = FindInSector(fileName, feBase, lastBytes / FE_ITEM_CNT);
+            Free(feBase);
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 在根目录查找目标文件
+ * @param 文件名
+ * @return 文件目录项
+ */
+static FileEntry* FindInRoot(const char* fileName)
+{
+    FileEntry* ret = NULL;
+
+    FSRoot* root = (FSRoot*)ReadSector(ROOT_SCT_IDX);
+
+    if(root && root->sctNum)
+    {
+        ret = FindFileEntry(fileName, root->sctBegin, root->sctNum, root->lastBytes);
+        Free(root);
+    }
+
+    return ret;
+}
+
+uint FExisted(const char* fileName)
+{
+    uint ret = FS_NOEXIST;
+    if(fileName)
+    {
+        FileEntry* fe = FindInRoot(fileName);
+        ret = fe ? FS_EXISTED : FS_NOEXIST;
+        Free(fe);
+    }
+    return ret;
+}
+
 
 
 
