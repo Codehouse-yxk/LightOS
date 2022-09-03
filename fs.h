@@ -18,8 +18,8 @@
 
 enum
 {
-	FS_FAILED,	//文件创建失败
-	FS_SUCCEED,	//文件创建成功
+	FS_FAILED,	//操作失败
+	FS_SUCCEED,	//操作成功
 	FS_EXISTED,	//文件已经存在
 	FS_NOEXIST	//文件不存在
 };
@@ -53,7 +53,7 @@ typedef struct
     uint idxOff;        //原始数据绝对扇区号对应的分配单元的位置【扇区内偏移】
 } MapPos;
 
-typedef struct
+typedef struct			//与FSRoot存在父子关系
 {
 	char name[32];		//文件名
 	uint sctBegin;		//文件占用的起始扇区
@@ -80,7 +80,7 @@ uint FSIsFormatted();
 /**
  * @description: 在根目录创建指定文件
  * @param 需要创建文件的文件名
- * @return 创建成功：1， 创建失败：0
+ * @return 创建成功：FS_SUCCEED， 创建失败：FS_FAILED
  */
 uint FCreate(const char* fileName);
 
@@ -90,6 +90,13 @@ uint FCreate(const char* fileName);
  * @return 是：1，否：0
  */
 uint FExisted(const char* fileName);
+
+/**
+ * @description: 删除目标文件
+ * @param 文件名
+ * @return 成功：FS_SUCCEED，失败：FS_FAILED
+ */
+uint FDelete(const char* fileName);
 
 
 

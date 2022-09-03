@@ -545,7 +545,7 @@ static FileEntry* FindFileEntry(const char* fileName, uint sctBegin, uint sctNum
         FileEntry* feBase = (FileEntry*)ReadSector(next);
         if(feBase)
         {
-            ret = FindInSector(fileName, feBase, lastBytes / FE_ITEM_CNT);
+            ret = FindInSector(fileName, feBase, lastBytes / FE_SIZE);
             Free(feBase);
         }
     }
@@ -585,6 +585,165 @@ uint FExisted(const char* fileName)
     return ret;
 }
 
+/**
+ * @description: 检测目标文件是否被打开
+ * @param 文件名
+ * @return 是：1，否：0
+ */
+static uint IsOpened(const char* name)
+{
+    uint ret = 0;
+
+
+    return ret;
+}
+
+/**
+ * @description: 回收存储文件数据的扇区
+ * @param 起始扇区
+ * @return 回收的扇区总数
+ */
+static uint FreeFile(uint sctBegin)
+{
+    uint ret = 0;
+    uint slider = sctBegin;
+
+    while(slider != SCT_END_FLAG)
+    {
+        uint next = NextSector(slider);
+
+        ret += FreeSector(slider);
+
+        slider = next;
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 移动FileEntry，将src移到dst
+ * @param dst
+ * @param src
+ */
+static void MoveFileEntry(FileEntry* dst, FileEntry* src)
+{
+    if(dst && src)
+    {
+        uint inSctIdx = dst->inSctIdx;
+        uint inSctOff = dst->inSctOff;
+
+        *dst = *src;
+
+        dst->inSctIdx = inSctIdx;
+        dst->inSctOff = inSctOff;
+    }
+}
+
+/**
+ * @description: 调整最后一个扇区
+ * @param 根目录信息
+ * @return 已调整：1，没有调整：0
+ */
+static uint AdjustStorage(FSRoot* fe)
+{
+    uint ret = 0;
+
+    if(!fe->lastBytes)
+    {
+        uint last = FindLast(fe->sctBegin);
+        uint prev = FindPre(fe->sctBegin, last);
+
+        if(FreeSector(last) && MarkSector(prev))    //释放最后一个扇区，并标记倒数第二个扇区成为最后一个扇区
+        {
+            fe->sctNum--;
+            fe->lastBytes = SECT_SIZE;
+            if(!fe->sctNum) //当扇区数为0，重置sctBegin
+            {
+                fe->sctBegin = SCT_END_FLAG;
+            }
+            ret = 1;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 抹除数据链表中最后n个字节
+ * @param 根目录信息
+ * @param 需要抹除的字节数
+ * @return 真正抹除的字节数
+ */
+static uint EraseLast(FSRoot* fe, uint bytes)
+{
+    uint ret = 0;
+
+    while (fe->sctNum && bytes>0)
+    {
+        if(bytes < fe->lastBytes)   //需要抹除的字节数小于最后一个扇区存储的字节数
+        {
+            fe->lastBytes -= bytes;
+            ret += bytes;
+            bytes = 0;
+        }
+        else
+        {
+            bytes -= fe->lastBytes;
+            ret += fe->lastBytes;
+            fe->lastBytes = 0;
+
+            AdjustStorage(fe);      //调整最后一个扇区
+        }
+    }
+    
+    return ret;
+}
+
+/**
+ * @description: 从根目录删除目标文件
+ * @param 文件名
+ * @return 成功：1， 失败：0
+ */
+static uint DeleteInRoot(const char* fileName)
+{
+    uint ret = 0;
+    FSRoot* root = (FSRoot*)ReadSector(ROOT_SCT_IDX);
+    FileEntry* fe = (FileEntry*)FindInRoot(fileName);
+
+    if(root && fe)
+    {
+        uint lastSct = FindLast(root->sctBegin);        //获取保存FileEntry的最后一个扇区
+        FileEntry* feTarget = ReadSector(fe->inSctIdx); //读取目标FileEntry所在的扇区
+        FileEntry* feLast = (lastSct != SCT_END_FLAG) ? ReadSector(lastSct) : NULL;
+
+        if(feTarget && feLast)
+        {
+            uint lastOff = root->lastBytes / FE_SIZE - 1;
+            FileEntry* lastItem = AddrOff(feLast, lastOff);             //定位到最后一个扇区中的最后一个FileEntry
+            FileEntry* targetItem = AddrOff(feTarget, fe->inSctOff);    //定位到目标文件FileEntry
+
+            FreeFile(targetItem->sctBegin);
+            MoveFileEntry(targetItem, lastItem);
+            EraseLast(root, FE_SIZE);
+
+            ret = HDWrite(ROOT_SCT_IDX, (byte*)root) 
+                    && HDWrite(fe->inSctIdx, (byte*)feTarget);
+        }
+
+        Free(feTarget);
+        Free(feLast);
+    }
+
+    Free(root);
+    Free(fe);    
+
+    return ret;
+}
+
+uint FDelete(const char* fileName)
+{
+    return fileName && !IsOpened(fileName) && (DeleteInRoot(fileName) ? FS_SUCCEED : FS_FAILED);
+}
 
 
 
