@@ -98,6 +98,14 @@ uint FExisted(const char* fileName);
  */
 uint FDelete(const char* fileName);
 
+/**
+ * @description: 修改目标文件名
+ * @param 原文件名
+ * @param 新文件名
+ * @return 成功：FS_SUCCEED，失败：FS_FAILED
+ */
+uint FRename(const char* oldName, const char* newName);
+
 
 
 #endif //FS_H

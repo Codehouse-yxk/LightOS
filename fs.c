@@ -745,6 +745,45 @@ uint FDelete(const char* fileName)
     return fileName && !IsOpened(fileName) && (DeleteInRoot(fileName) ? FS_SUCCEED : FS_FAILED);
 }
 
+static uint FlushFileEntry(FileEntry* fe)
+{
+    uint ret = 0;
+
+    FileEntry* feBase = ReadSector(fe->inSctIdx);
+    FileEntry* feInSct = AddrOff(feBase, fe->inSctOff);
+
+    if(feBase && feInSct)
+    {
+        *feInSct = *fe;
+        ret = HDWrite(feInSct->inSctIdx, (byte*)feBase);
+    }
+    Free(feBase);
+    return ret;
+}
+
+uint FRename(const char* oldName, const char* newName)
+{
+    uint ret = FS_FAILED;
+
+    if(oldName && !IsOpened(oldName) && newName)
+    {
+        FileEntry* oldFe = FindInRoot(oldName);
+        FileEntry* newFe = FindInRoot(newName);
+
+        if(oldFe && !newFe)
+        {
+            StrCpy(oldFe->name, newName, sizeof(oldFe->name)-1);
+            if(FlushFileEntry(oldFe))
+            {
+                ret = FS_SUCCEED;
+            }
+        }
+        Free(oldFe);
+        Free(newFe);
+    }
+
+    return ret;
+}
 
 
 
