@@ -9,6 +9,14 @@
 #include "fs.h"
 #include "memory.h"
 
+static List gFDList = {0};
+
+void FSModInit()
+{
+    HDModeInit();
+    List_Init(&gFDList);
+}
+
 /**
  * @description: 读取扇区数据
  * @param 扇区号
@@ -593,7 +601,15 @@ uint FExisted(const char* fileName)
 static uint IsOpened(const char* name)
 {
     uint ret = 0;
-
+    ListNode* pos = NULL;
+    List_ForEach(&gFDList, pos)
+    {
+        FileDesc* fd = (FileDesc*)pos;
+        if(StrCmp(fd->fe.name, name, -1))
+        {
+            ret =
+        }
+    }
 
     return ret;
 }
@@ -783,6 +799,93 @@ uint FRename(const char* oldName, const char* newName)
     }
 
     return ret;
+}
+
+uint FOpen(const char* fileName)
+{
+    FileDesc* ret = NULL;
+
+    if(fileName && !IsOpened(fileName))
+    {
+        FileEntry* fe = FindInRoot(fileName);
+        ret = (FileDesc*)Malloc(FD_SIZE);
+        if(fe && ret)
+        {
+            ret->fe = *fe;
+            ret->objIdx = SCT_END_FLAG;
+            ret->offset = 0;
+            ret->changed = 0;
+             List_Add(&gFDList, (ListNode*)ret);
+        }
+        Free(fe);
+    }
+
+    return (uint)ret;
+}
+
+/**
+ * @description: 检测文件描述符是否合法
+ * @param 文件描述符
+ * @return 合法：1， 不合法：0
+ */
+static uint IsFDValid(FileDesc* fd)
+{
+    uint ret = 0;
+    ListNode* pos = NULL;
+
+    List_ForEach(&gFDList, pos)
+    {
+        if(isEqual(fd, pos))
+        {
+            ret = 1;
+            break;
+        }
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 将文件缓冲区的数据刷新到硬盘
+ * @param 文件描述符
+ * @return 成功：1， 失败：0
+ */
+static uint FlushCache(FileDesc* fd)
+{
+    uint ret = 0;
+
+    if(fd->changed)
+    {
+        uint sctIdx = FindIndex(fd->fe.sctBegin, fd->objIdx);   //根据文件占用的扇区链表找到当前正在修改的扇区
+
+        if((sctIdx != SCT_END_FLAG) && (ret = HDWrite(sctIdx, fd->cache)))
+        {
+            fd->changed = 0;
+        }
+    }
+    else    //数据没有发生改变，则不需要写入硬盘
+    {
+        ret = 1; 
+    }
+
+    return ret;
+}
+
+static uint ToFlush(FileDesc* fd)
+{
+    return FlushCache(fd) && FlushFileEntry(&fd->fe);
+}
+
+void FClose(uint fd)
+{
+    FileDesc* pfd = (FileDesc*)fd;
+
+    if(IsFDValid(pfd))      //检测文件描述符是否合法
+    {
+        ToFlush(pfd);       //将文件缓冲区的数据刷新到硬盘
+        List_DelNode((ListNode*)pfd);   //删除该文件描述符
+        Free(pfd);
+    }
 }
 
 

@@ -4,6 +4,7 @@
 #include "type.h"
 #include "utility.h"
 #include "harddisk.h"
+#include "list.h"
 
 #define FS_MAGIC            "LightFS-v1.0"
 #define ROOT_MAGIC          "ROOT"
@@ -12,6 +13,7 @@
 #define FIXED_SCT_SIZE      2
 #define SCT_END_FLAG        ((uint)-1)					//扇区无法使用标记【末尾标记】
 #define FE_SIZE				(sizeof(FileEntry))
+#define FD_SIZE				(sizeof(FileDesc))
 #define FE_ITEM_CNT			(SECT_SIZE / FE_SIZE)		//一个扇区可以存放的FileEntry数量
 #define MAP_ITEM_CNT        (SECT_SIZE / sizeof(uint))	//一个扇区可以存放的管理单元的数量
 
@@ -65,6 +67,22 @@ typedef struct			//与FSRoot存在父子关系
 	uint reserved[2];
 } FileEntry;
 
+typedef struct
+{
+	ListNode head;
+	FileEntry fe;
+	uint objIdx;	//文件读写指针【所在数据扇区偏移】
+	uint offset;	//文件读写指针【所在数据扇区内偏移】
+	uint changed;	//文件是否有改动
+	byte cache[SECT_SIZE];	//文件缓冲区
+}FileDesc;
+
+
+/**
+ * @description: 文件系统模块初始化
+ */
+void FSModInit();
+
 /**
  * @description: 格式化硬盘
  * @return 格式化成功：1，格式化失败：0
@@ -106,6 +124,17 @@ uint FDelete(const char* fileName);
  */
 uint FRename(const char* oldName, const char* newName);
 
+/**
+ * @description: 打开目标文件
+ * @param 文件名
+ * @return 文件描述符
+ */
+uint FOpen(const char* fileName);
 
+/**
+ * @description: 关闭目标文件
+ * @param 文件描述符
+ */
+void FClose(uint fd);
 
 #endif //FS_H
