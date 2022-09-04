@@ -1005,6 +1005,116 @@ int FWrite(uint fd, byte* buff, uint len)
     return ret;
 }
 
+/**
+ * @description: 获取文件大小
+ * @param 文件描述符
+ * @return 文件大小
+ */
+static uint GetFileLen(FileDesc* fd)
+{
+    uint ret = 0;
+    if(fd->fe.sctBegin != SCT_END_FLAG)
+    {
+        ret = (fd->fe.sctNum - 1) * SECT_SIZE + fd->fe.lastBytes;
+    }
+    return ret;
+}
+
+/**
+ * @description: 获取文件读写指针位置
+ * @param 文件描述符
+ * @return 文件读写指针偏移
+ */
+static uint GetFilePos(FileDesc* fd)
+{
+    uint ret = 0;
+    if(fd->objIdx != SCT_END_FLAG)
+    {
+        ret = fd->objIdx * SECT_SIZE + fd->offset;
+    }
+    return ret;
+}
+
+/**
+ * @description: 从缓冲区拷贝数据
+ * @param 文件描述符
+ * @param 数据buff
+ * @param 需要读取的数据长度
+ * @return 成功：拷贝的数据长度，失败：-1
+ */
+static int CopyFromCache(FileDesc* fd, byte* buff, uint len)
+{
+    int ret = -1;
+
+    if(fd->objIdx != SCT_END_FLAG)
+    {
+        uint n = SECT_SIZE - fd->offset;
+        byte* p = AddrOff(fd->cache, fd->offset);
+        n = Min(n, len);
+
+        MemCpy(buff, p, n);
+        
+        fd->offset += n;
+        
+        ret = n;
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 读数据
+ * @param 文件描述符
+ * @param 数据buff
+ * @param 数据长度
+ * @return 成功：读到的数据长度，失败：-1
+ */
+static int ToRead(FileDesc* fd, byte* buff, uint len)
+{
+    int ret = -1;
+    uint n = GetFileLen(fd) - GetFilePos(fd);    //计算当前有多少数据供读取
+    int i = 0;  //记录已经读到的数据量
+    len = Min(len, n);
+
+    while((i < len) && ret)
+    {
+        byte* p = AddrOff(buff, i);
+
+        if(fd->offset == SECT_SIZE)
+        {
+            ret = PrepareCache(fd, fd->objIdx + 1);
+        }
+
+        if(ret)
+        {
+            n = CopyFromCache(fd, p, len - i);
+            if(n < 0)
+            {
+                i = -1;
+                break;
+            }
+        }
+
+        i += n;
+    }
+
+    ret = i;
+
+    return ret;
+}
+
+int FRead(uint fd, byte* buff, uint len)
+{
+    int ret = -1;
+
+    if(IsFDValid((FileDesc*)fd) && buff)
+    {
+        ret = ToRead((FileDesc*)fd, buff, len);
+    }
+
+    return ret;
+}
+
 
 
 

@@ -146,4 +146,13 @@ void FClose(uint fd);
  */
 int FWrite(uint fd, byte* buff, uint len);
 
+/**
+ * @description: 读文件数据
+ * @param 文件描述符
+ * @param 缓冲区
+ * @param 读取目标长度
+ * @return 读到的数据长度
+ */
+int FRead(uint fd, byte* buff, uint len);
+
 #endif //FS_H
