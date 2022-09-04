@@ -380,9 +380,9 @@ static uint AddToLast(uint sctBegin, uint si)
 }
 
 /**
- * @description: 检查根目录容量是否需要扩展
+ * @description: 检查数据链表是否需要扩容
  * @param 文件信息
- * @return 扩展根目录容量：1，没有扩展容量：0
+ * @return 已扩容：1，没有扩容：0
  */
 static uint CheckStorage(FSRoot* fe)
 {
@@ -607,7 +607,8 @@ static uint IsOpened(const char* name)
         FileDesc* fd = (FileDesc*)pos;
         if(StrCmp(fd->fe.name, name, -1))
         {
-            ret =
+            ret = 1;
+            break;
         }
     }
 
@@ -813,7 +814,7 @@ uint FOpen(const char* fileName)
         {
             ret->fe = *fe;
             ret->objIdx = SCT_END_FLAG;
-            ret->offset = 0;
+            ret->offset = SECT_SIZE;
             ret->changed = 0;
              List_Add(&gFDList, (ListNode*)ret);
         }
@@ -886,6 +887,122 @@ void FClose(uint fd)
         List_DelNode((ListNode*)pfd);   //删除该文件描述符
         Free(pfd);
     }
+}
+
+static uint ReadToCache(FileDesc* fd, uint objIdx)
+{
+    uint ret = 0;
+
+    if(objIdx < fd->fe.sctNum)
+    {
+        uint sctIdx = FindIndex(fd->fe.sctBegin, objIdx);
+        
+        ToFlush(fd);        //先将旧缓冲区中的数据刷新到硬盘
+        
+        if((sctIdx != SCT_END_FLAG) && (ret = HDRead(sctIdx, fd->cache)))   //将新扇区数据读到缓冲区
+        {
+            fd->objIdx = objIdx;
+            fd->offset = 0;
+            fd->changed = 0;
+        }
+    }
+    return ret;
+}
+
+/**
+ * @description: 准备缓冲区
+ * @param 文件描述符
+ * @param 数据链表中扇区位置
+ * @return 成功：1，失败：0
+ */
+static uint PrepareCache(FileDesc* fd, uint objIdx)
+{
+    CheckStorage((FSRoot*)&fd->fe);
+    return ReadToCache(fd, objIdx);
+}
+
+/**
+ * @description: 拷贝数据到缓冲区
+ * @param 文件描述符
+ * @param 数据buff
+ * @param 需要写入的数据长度
+ * @return 成功：拷贝的数据长度，失败：-1
+ */
+static int CopyToCache(FileDesc* fd, byte* buff, uint len)
+{
+    int ret = -1;
+
+    if(fd->objIdx != SCT_END_FLAG)
+    {
+        uint n = SECT_SIZE - fd->offset;
+        byte* p = AddrOff(fd->cache, fd->offset);
+        n = Min(n, len);
+
+        MemCpy(p, buff, n);
+        
+        fd->offset += n;
+        fd->changed = 1;
+
+        //判断是否是最后一个数据扇区，如果数据长度变大，需要更新读写指针偏移
+        if(((fd->fe.sctNum - 1) == fd->objIdx) && (fd->fe.lastBytes < fd->offset))
+        {
+            fd->fe.lastBytes = fd->offset;
+        }
+        ret = n;
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 写数据
+ * @param 文件描述符
+ * @param 数据buff
+ * @param 数据长度
+ * @return 成功：写入的数据长度，失败：-1
+ */
+static int ToWrite(FileDesc* fd, byte* buff, uint len)
+{
+    int ret = 1;
+    int i = 0;
+    int n = 0;
+
+    while((i<len) && ret)
+    {
+        byte* p = AddrOff(buff, i);
+
+        if(fd->offset == SECT_SIZE) //缓冲区已满，需要准备下一个缓冲区
+        {
+            ret = PrepareCache(fd, fd->objIdx + 1);
+        }
+
+        if(ret)
+        {
+            n = CopyToCache(fd, p, len - i);
+            if(n < 0)   
+            {
+                i = -1;
+                break;
+            }
+            i += n;
+        }
+    }
+
+    ret = i;
+
+    return ret;
+}
+
+int FWrite(uint fd, byte* buff, uint len)
+{
+    int ret = -1;
+
+    if(IsFDValid((FileDesc*)fd) && buff && len)
+    {
+        ret = ToWrite((FileDesc*)fd, buff, len);
+    }
+
+    return ret;
 }
 
 

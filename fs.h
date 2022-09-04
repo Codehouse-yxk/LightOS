@@ -137,4 +137,13 @@ uint FOpen(const char* fileName);
  */
 void FClose(uint fd);
 
+/**
+ * @description: 往文件中写数据
+ * @param 文件描述符
+ * @param 缓冲区
+ * @param 数据长度
+ * @return 写入的数据长度
+ */
+int FWrite(uint fd, byte* buff, uint len);
+
 #endif //FS_H
