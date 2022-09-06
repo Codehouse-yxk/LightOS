@@ -142,7 +142,7 @@ void FClose(uint fd);
  * @param 文件描述符
  * @param 缓冲区
  * @param 数据长度
- * @return 写入的数据长度
+ * @return 成功：写入的数据长度，失败：-1
  */
 int FWrite(uint fd, byte* buff, uint len);
 
@@ -151,8 +151,16 @@ int FWrite(uint fd, byte* buff, uint len);
  * @param 文件描述符
  * @param 缓冲区
  * @param 读取目标长度
- * @return 读到的数据长度
+ * @return 成功：读到的数据长度，失败：-1
  */
 int FRead(uint fd, byte* buff, uint len);
+
+/**
+ * @description: 擦除目标文件最后的数据
+ * @param 文件描述符
+ * @param 要擦除的数据大小
+ * @return 成功：擦除的字节数， 失败：-1
+ */
+int FErase(uint fd, uint bytes);
 
 #endif //FS_H

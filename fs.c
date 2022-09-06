@@ -872,6 +872,11 @@ static uint FlushCache(FileDesc* fd)
     return ret;
 }
 
+/**
+ * @description: 将缓冲区数据刷新到硬盘
+ * @param 文件描述符
+ * @return 成功：1，失败：0
+ */
 static uint ToFlush(FileDesc* fd)
 {
     return FlushCache(fd) && FlushFileEntry(&fd->fe);
@@ -1110,6 +1115,60 @@ int FRead(uint fd, byte* buff, uint len)
     if(IsFDValid((FileDesc*)fd) && buff)
     {
         ret = ToRead((FileDesc*)fd, buff, len);
+    }
+
+    return ret;
+}
+
+/**
+ * @description: 重定位文件读写指针位置
+ * @param 文件描述符
+ * @param 指针位置
+ * @return 成功：重定位后指针的位置，失败：-1
+ */
+static int ToLocate(FileDesc* fd, uint pos)
+{
+    int ret = -1;
+
+    //计算移动后读写指针的位置
+    uint len = GetFileLen(fd);
+    pos = Min(len, pos);
+
+    //计算读写指针位置与数据链表扇区位置的关系
+    uint objIdx = pos / SECT_SIZE;
+    uint offset = pos % SECT_SIZE;
+    uint sctIdx = FindIndex(fd->fe.sctBegin, objIdx);
+    ToFlush(fd);
+
+    //数据发生变动，扇区发生变化，需要读取一次扇区到缓冲区
+    if((sctIdx != SCT_END_FLAG) && (HDRead(sctIdx, fd->cache)))
+    {
+        fd->objIdx = objIdx;
+        fd->offset = offset;
+
+        ret = pos;
+    }
+    
+    return ret;
+}
+
+int FErase(uint fd, uint bytes)
+{
+    int ret = -1;
+    FileDesc*pf = (FileDesc*)fd;
+
+    if(IsFDValid(pf))
+    {
+        uint pos = GetFilePos(pf);
+        uint len = GetFileLen(pf);
+
+        ret = EraseLast((FSRoot*)&pf->fe, bytes);
+        len -= ret;     //擦除后的文件长度
+
+        if(ret && (pos > len))  //擦除后的文件长度小于当前读写指针位置，说明需要重定位
+        {
+            ToLocate(pf, len);
+        }
     }
 
     return ret;
