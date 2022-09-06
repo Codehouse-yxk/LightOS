@@ -1174,6 +1174,56 @@ int FErase(uint fd, uint bytes)
     return ret;
 }
 
+int FSeek(uint fd, uint pos)
+{
+    int ret = -1;
+    FileDesc*pf = (FileDesc*)fd;
 
+    if(IsFDValid(pf))
+    {
+        ret = ToLocate(pf, pos);
+    }
+
+    return ret;
+}
+
+int FLength(uint fd)
+{
+    int ret = -1;
+    FileDesc*pf = (FileDesc*)fd;
+
+    if(IsFDValid(pf))
+    {
+        ret = GetFileLen(pf);
+    }
+
+    return ret;
+}
+
+uint FTell(uint fd)
+{
+    uint ret = 0;
+    FileDesc*pf = (FileDesc*)fd;
+
+    if(IsFDValid(pf))
+    {
+        ret = GetFilePos(pf);
+    }
+
+    return ret;
+}
+
+uint FFlush(uint fd)
+{
+    uint ret = 0;
+    FileDesc*pf = (FileDesc*)fd;
+
+    if(IsFDValid(pf))
+    {
+        ret = ToFlush(pf);
+    }
+
+    return ret;
+}
 
 

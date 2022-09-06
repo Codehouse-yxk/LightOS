@@ -163,4 +163,33 @@ int FRead(uint fd, byte* buff, uint len);
  */
 int FErase(uint fd, uint bytes);
 
+/**
+ * @description: 将文件读写指针重定位到目标位置
+ * @param 文件描述符
+ * @param 指针位置
+ * @return 成功：重定位后的位置， 失败：-1
+ */
+int FSeek(uint fd, uint pos);
+
+/**
+ * @description: 获取文件长度
+ * @return 文件长度
+ */
+int FLength(uint fd);
+
+/** 
+ * @description: 获取当前文件读写指针的位置
+ * @param 文件描述符
+ * @return 指针位置
+ */
+uint FTell(uint fd);
+
+/**
+ * @description: 将缓冲区数据刷新到硬盘
+ * @param 文件描述符
+ * @return 成功：1，失败：0
+ */
+uint FFlush(uint fd);
+
+
 #endif //FS_H
